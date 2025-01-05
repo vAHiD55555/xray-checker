@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21 as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.23 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -12,7 +12,6 @@ ENV GO111MODULE=on
 
 WORKDIR /go/src/github.com/kutovoys/xray-checker
 
-# Cache the download before continuing
 COPY go.mod go.mod
 COPY go.sum go.sum
 RUN go mod download
@@ -20,15 +19,14 @@ RUN go mod download
 COPY .  .
 
 RUN CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-  go build -a -installsuffix cgo -o /usr/bin/xray-checker .
+  go build -ldflags="-X main.version=${GIT_TAG} -X main.commit=${GIT_COMMIT}" -a -installsuffix cgo -o /usr/bin/xray-checker .
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} teddysun/xray:1.8.23
+FROM --platform=${BUILDPLATFORM:-linux/amd64} gcr.io/distroless/static:nonroot
 
 LABEL org.opencontainers.image.source=https://github.com/kutovoys/xray-checker
 
-WORKDIR /app
-COPY --from=builder /usr/bin/xray-checker /app/xray-checker
-COPY ./templates /app/templates
-# USER nonroot:nonroot
+WORKDIR /
+COPY --from=builder /usr/bin/xray-checker /
+USER nonroot:nonroot
 
-CMD ["/app/xray-checker"]
+ENTRYPOINT ["/xray-checker"]

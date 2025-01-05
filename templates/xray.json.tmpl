@@ -1,0 +1,140 @@
+{
+  "log": {
+    "loglevel": "{{.XrayLogLevel}}"
+  },
+  "inbounds": [
+    {{- range $index, $proxy := .Proxies }}
+    {{- if ne $index 0 }},{{ end }}
+    {
+      "listen": "127.0.0.1",
+      "port": {{ add $.StartPort $proxy.Index }},
+      "protocol": "socks",
+      "tag": "{{$proxy.Name}}_{{$proxy.Protocol}}_TRANSPORT",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"],
+        "routeOnly": true
+      }
+    }
+    {{- end }}
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIP"
+      },
+      "streamSettings": {
+        "sockopt": {}
+      }
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole",
+      "settings": {}
+    },
+    {
+      "tag": "dns-out",
+      "protocol": "dns",
+      "settings": {
+        "address": "119.29.29.29",
+        "network": "udp",
+        "port": 53
+      },
+      "streamSettings": {
+        "sockopt": {}
+      }
+    }
+    {{- range $proxy := .Proxies }},
+    {{- if eq $proxy.Protocol "vless" }}
+    {
+      "tag": "{{$proxy.Name}}",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [{
+          "address": "{{$proxy.Server}}",
+          "port": {{$proxy.Port}},
+          "users": [{
+            "id": "{{$proxy.UUID}}",
+            "encryption": "none",
+            "flow": "{{$proxy.Flow}}"
+          }]
+        }]
+      },
+      "streamSettings": {
+        "network": "{{$proxy.Type}}",
+        "security": "{{$proxy.Security}}",
+        {{- if eq $proxy.Security "reality" }}
+        "realitySettings": {
+          "serverName": "{{$proxy.SNI}}",
+          "fingerprint": "{{$proxy.Fingerprint}}",
+          "publicKey": "{{$proxy.PublicKey}}",
+          "shortId": "{{$proxy.ShortID}}"
+        }
+        {{- end }},
+        "sockopt": {}
+      }
+    }
+    {{- else if eq $proxy.Protocol "trojan" }}
+    {
+      "tag": "{{$proxy.Name}}",
+      "protocol": "trojan",
+      "settings": {
+        "servers": [{
+          "address": "{{$proxy.Server}}",
+          "port": {{$proxy.Port}},
+          "password": "{{$proxy.Password}}"
+        }]
+      },
+      "streamSettings": {
+        "network": "{{$proxy.Type}}",
+        "security": "{{$proxy.Security}}",
+        {{- if eq $proxy.Security "tls" }}
+        "tlsSettings": {
+          "allowInsecure": false
+        },
+        {{- end }}
+        {{- if eq $proxy.Type "ws" }}
+        "wsSettings": {
+          "path": "{{$proxy.Path}}",
+          "headers": {
+            "Host": "{{$proxy.Host}}"
+          }
+        },
+        {{- end }}
+        "sockopt": {}
+      }
+    }
+    {{- else if eq $proxy.Protocol "shadowsocks" }}
+    {
+      "tag": "{{$proxy.Name}}",
+      "protocol": "shadowsocks",
+      "settings": {
+        "servers": [{
+          "address": "{{$proxy.Server}}",
+          "port": {{$proxy.Port}},
+          "method": "{{$proxy.Method}}",
+          "password": "{{$proxy.Password}}"
+        }]
+      },
+      "streamSettings": {
+        "sockopt": {}
+      }
+    }
+    {{- end }}
+    {{- end }}
+  ],
+  "routing": {
+    "rules": [
+      {{- range $index, $proxy := .Proxies }}
+      {{- if ne $index 0 }},{{ end }}
+      {
+        "type": "field",
+        "inboundTag": ["{{$proxy.Name}}_{{$proxy.Protocol}}_TRANSPORT"],
+        "outboundTag": "{{$proxy.Name}}"
+      }
+      {{- end }}
+    ]
+  }
+}
