@@ -80,6 +80,7 @@ User-Agent: Xray-Checker
 ./xray-checker \
   --subscription-url="https://your-subscription-url/sub" \
   --check-interval=300 \
+  --ip-check-timeout=5 \
   --metrics-port=2112 \
   --start-port=10000 \
   --xray-log-level=none \
