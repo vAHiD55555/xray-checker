@@ -39,17 +39,32 @@ Each metric includes the following labels:
 
 The application can be configured using environment variables or command-line arguments:
 
-| Environment Variable | Command-Line Argument | Required | Default                             | Description                                        |
-| -------------------- | --------------------- | -------- | ----------------------------------- | -------------------------------------------------- |
-| `SUBSCRIPTION_URL`   | `--subscription-url`  | Yes      | -                                   | Subscription URL for obtaining configurations      |
-| `CHECK_INTERVAL`     | `--check-interval`    | No       | `5`                                 | Check interval in minutes                          |
-| `IP_CHECK_SERVICE`   | `--ip-check-service`  | No       | `https://api.ipify.org?format=text` | Service for IP checking                            |
-| `START_PORT`         | `--start-port`        | No       | `10000`                             | Starting port for proxy configurations             |
-| `XRAY_LOG_LEVEL`     | `--xray-log-level`    | No       | `none`                              | Xray logging level (debug/info/warning/error/none) |
-| `METRICS_PORT`       | `--metrics-port`      | No       | `2112`                              | Port for metrics                                   |
-| `METRICS_PROTECTED`  | `--metrics-protected` | No       | `false`                             | Protect metrics with Basic Auth                    |
-| `METRICS_USERNAME`   | `--metrics-username`  | No       | `metricsUser`                       | Username for Basic Auth                            |
-| `METRICS_PASSWORD`   | `--metrics-password`  | No       | `MetricsVeryHardPassword`           | Password for Basic Auth                            |
+| Environment Variable   | Command-Line Argument    | Required | Default                             | Description                                        |
+| ---------------------- | ------------------------ | -------- | ----------------------------------- | -------------------------------------------------- |
+| `SUBSCRIPTION_URL`     | `--subscription-url`     | Yes      | -                                   | Subscription URL for obtaining configurations      |
+| `RECHECK_SUBSCRIPTION` | `--recheck-subscription` | No       | `true`                              | Recheck subscription on each check                 |
+| `CHECK_INTERVAL`       | `--check-interval`       | No       | `300`                               | Check interval in seconds                          |
+| `IP_CHECK_SERVICE`     | `--ip-check-service`     | No       | `https://api.ipify.org?format=text` | Service for IP checking                            |
+| `IP_CHECK_TIMEOUT`     | `--ip-check-timeout`     | No       | `5`                                 | Timeout for IP checking in seconds                 |
+| `START_PORT`           | `--start-port`           | No       | `10000`                             | Starting port for proxy configurations             |
+| `XRAY_LOG_LEVEL`       | `--xray-log-level`       | No       | `none`                              | Xray logging level (debug/info/warning/error/none) |
+| `METRICS_PORT`         | `--metrics-port`         | No       | `2112`                              | Port for metrics                                   |
+| `METRICS_PROTECTED`    | `--metrics-protected`    | No       | `false`                             | Protect metrics with Basic Auth                    |
+| `METRICS_USERNAME`     | `--metrics-username`     | No       | `metricsUser`                       | Username for Basic Auth                            |
+| `METRICS_PASSWORD`     | `--metrics-password`     | No       | `MetricsVeryHardPassword`           | Password for Basic Auth                            |
+
+### Subscription Format
+
+The content of `SUBSCRIPTION_URL` must be in Base64 Encoded format containing a list of proxies. (Standard format for Xray clients - Streisand, V2rayNG).
+
+Proxies with ports 0, 1 will be ignored.
+
+Request headers sent:
+
+```
+Accept: */*
+User-Agent: Xray-Checker
+```
 
 ## Usage
 
@@ -64,7 +79,7 @@ The application can be configured using environment variables or command-line ar
 # Advanced usage with custom settings
 ./xray-checker \
   --subscription-url="https://your-subscription-url/sub" \
-  --check-interval=5 \
+  --check-interval=300 \
   --metrics-port=2112 \
   --start-port=10000 \
   --xray-log-level=none \
@@ -78,7 +93,7 @@ The application can be configured using environment variables or command-line ar
 ```bash
 docker run -d \
   -e SUBSCRIPTION_URL=https://your-subscription-url/sub \
-  -e CHECK_INTERVAL=5 \
+  -e CHECK_INTERVAL=300 \
   -p 2112:2112 \
   kutovoys/xray-checker
 ```
@@ -91,7 +106,7 @@ services:
     image: kutovoys/xray-checker
     environment:
       - SUBSCRIPTION_URL=https://your-subscription-url/sub
-      - CHECK_INTERVAL=5
+      - CHECK_INTERVAL=300
       - METRICS_PROTECTED=true
       - METRICS_USERNAME=custom_user
       - METRICS_PASSWORD=custom_password

@@ -37,16 +37,19 @@ func main() {
 		log.Fatalf("Error starting Xray: %v", err)
 	}
 
-	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.StartPort, config.CLIConfig.IPCheckService)
+	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.StartPort, config.CLIConfig.IPCheckService, config.CLIConfig.IpCheckTimeout)
 	s := gocron.NewScheduler(time.UTC)
-	s.Every(config.CLIConfig.CheckInterval).Minutes().Do(func() {
+	s.Every(config.CLIConfig.CheckInterval).Seconds().Do(func() {
 		log.Printf("Starting proxy check iteration...")
-		newConfigs, err := parser.ParseSubscription(config.CLIConfig.SubscriptionURL)
-		if err != nil {
-			log.Printf("Error checking subscription updates: %v", err)
+		if config.CLIConfig.RecheckSubscription {
+			log.Printf("Updating subscription...")
+			newConfigs, err := parser.ParseSubscription(config.CLIConfig.SubscriptionURL)
+			if err != nil {
+				log.Printf("Error checking subscription updates: %v", err)
 		} else if !xray.IsConfigsEqual(*proxyConfigs, newConfigs) {
 			if err := xray.UpdateConfiguration(newConfigs, proxyConfigs, xrayRunner, proxyChecker); err != nil {
 				log.Printf("Error updating configuration: %v", err)
+				}
 			}
 		}
 		proxyChecker.CheckAllProxies()

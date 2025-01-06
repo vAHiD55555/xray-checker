@@ -29,7 +29,9 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 			Port:            config.CLIConfig.Port,
 			CheckInterval:   config.CLIConfig.CheckInterval,
 			IPCheckService:  config.CLIConfig.IPCheckService,
+			IpCheckTimeout:  config.CLIConfig.IpCheckTimeout,
 			SubscriptionURL: config.CLIConfig.SubscriptionURL,
+			RecheckSubscription: config.CLIConfig.RecheckSubscription,
 			StartPort:       config.CLIConfig.StartPort,
 			Endpoints:       registeredEndpoints,
 		}

@@ -25,7 +25,9 @@ type PageData struct {
 	Port            string
 	CheckInterval   int
 	IPCheckService  string
+	IpCheckTimeout  int
 	SubscriptionURL string
+	RecheckSubscription bool
 	StartPort       int
 	Endpoints       []EndpointInfo
 }

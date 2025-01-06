@@ -39,17 +39,32 @@ Xray Checker - это инструмент для мониторинга дос�
 
 Приложение можно настроить с помощью переменных окружения или аргументов командной строки:
 
-| Переменная окружения | Аргумент командной строки | Обязательно | Значение по умолчанию               | Описание                                                 |
-| -------------------- | ------------------------- | ----------- | ----------------------------------- | -------------------------------------------------------- |
-| `SUBSCRIPTION_URL`   | `--subscription-url`      | Yes         | -                                   | URL подписки для получения конфигураций                  |
-| `CHECK_INTERVAL`     | `--check-interval`        | No          | `5`                                 | Интервал проверки в минутах                              |
-| `IP_CHECK_SERVICE`   | `--ip-check-service`      | No          | `https://api.ipify.org?format=text` | Сервис для проверки IP                                   |
-| `START_PORT`         | `--start-port`            | No          | `10000`                             | Стартовый порт для конфигураций прокси                   |
-| `XRAY_LOG_LEVEL`     | `--xray-log-level`        | No          | `none`                              | Уровень логирования Xray (debug/info/warning/error/none) |
-| `METRICS_PORT`       | `--metrics-port`          | No          | `2112`                              | Порт для метрик                                          |
-| `METRICS_PROTECTED`  | `--metrics-protected`     | No          | `false`                             | Защита метрик с помощью Basic Auth                       |
-| `METRICS_USERNAME`   | `--metrics-username`      | No          | `metricsUser`                       | Имя пользователя для Basic Auth                          |
-| `METRICS_PASSWORD`   | `--metrics-password`      | No          | `MetricsVeryHardPassword`           | Пароль для Basic Auth                                    |
+| Переменная окружения   | Аргумент командной строки | Обязательно | Значение по умолчанию               | Описание                                                      |
+| ---------------------- | ------------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------- |
+| `SUBSCRIPTION_URL`     | `--subscription-url`      | Yes         | -                                   | URL подписки для получения конфигураций                       |
+| `RECHECK_SUBSCRIPTION` | `--recheck-subscription`  | No          | `true`                              | Обновлять подписку при каждой проверке (true) или нет (false) |
+| `CHECK_INTERVAL`       | `--check-interval`        | No          | `300`                               | Интервал проверки в секундах                                  |
+| `IP_CHECK_SERVICE`     | `--ip-check-service`      | No          | `https://api.ipify.org?format=text` | Сервис для проверки IP                                        |
+| `IP_CHECK_TIMEOUT`     | `--ip-check-timeout`      | No          | `30`                                | Таймаут для проверки IP                                       |
+| `START_PORT`           | `--start-port`            | No          | `10000`                             | Стартовый порт для конфигураций прокси                        |
+| `XRAY_LOG_LEVEL`       | `--xray-log-level`        | No          | `none`                              | Уровень логирования Xray (debug/info/warning/error/none)      |
+| `METRICS_PORT`         | `--metrics-port`          | No          | `2112`                              | Порт для метрик                                               |
+| `METRICS_PROTECTED`    | `--metrics-protected`     | No          | `false`                             | Защита метрик с помощью Basic Auth                            |
+| `METRICS_USERNAME`     | `--metrics-username`      | No          | `metricsUser`                       | Имя пользователя для Basic Auth                               |
+| `METRICS_PASSWORD`     | `--metrics-password`      | No          | `MetricsVeryHardPassword`           | Пароль для Basic Auth                                         |
+
+### Формат подписки
+
+Содержимое `SUBSCRIPTION_URL` должно быть в формате Base64 Encoded списка прокси. (Стандартный формат Xray-клиентов – Streisand, V2rayNG).
+
+Прокси с портами 0, 1 – будут игнорироваться.
+
+Отправляемые заголовки:
+
+```
+Accept: */*
+User-Agent: Xray-Checker
+```
 
 ## Использование
 
@@ -64,7 +79,8 @@ Xray Checker - это инструмент для мониторинга дос�
 # Расширенное использование с пользовательскими настройками
 ./xray-checker \
   --subscription-url="https://your-subscription-url/sub" \
-  --check-interval=5 \
+  --check-interval=120 \
+  --ip-check-timeout=5 \
   --metrics-port=2112 \
   --start-port=10000 \
   --xray-log-level=none \
@@ -91,7 +107,7 @@ services:
     image: kutovoys/xray-checker
     environment:
       - SUBSCRIPTION_URL=https://your-subscription-url/sub
-      - CHECK_INTERVAL=5
+      - CHECK_INTERVAL=300
       - METRICS_PROTECTED=true
       - METRICS_USERNAME=custom_user
       - METRICS_PASSWORD=custom_password

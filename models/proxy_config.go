@@ -39,7 +39,3 @@ func (pc *ProxyConfig) Validate() error {
 func (pc *ProxyConfig) GetEndpointPath() string {
 	return fmt.Sprintf("%s-%s-%d", pc.Protocol, pc.Server, pc.Port)
 }
-
-type SubscriptionResponse struct {
-	Links []string `json:"links"`
-}
