@@ -26,6 +26,7 @@ type CLI struct {
 	CheckInterval    int         `name:"check-interval" help:"Interval for proxy checks in seconds" default:"300" env:"CHECK_INTERVAL"`
 	IPCheckService   string      `name:"ip-check-service" help:"Service URL for IP checking" default:"https://api.ipify.org?format=text" env:"IP_CHECK_SERVICE"`
 	GenMethodURL     string      `name:"gen-method-url" help:"Response status generator, used by check-method=gen" default:"http://cp.cloudflare.com/generate_204" env:"GEN_METHOD_URL"`
+	ResponseWithLatency bool     `name:"response-with-latency" help:"Whether to add latency to the response" default:"false" env:"RESPONSE_WITH_LATENCY"`
 	CheckMethod      string      `name:"check-method" help:"Method for checking proxy, ip or gen" default:"ip" env:"CHECK_METHOD"`
 	IpCheckTimeout   int         `name:"ip-check-timeout" help:"Timeout for IP checking in seconds" default:"30" env:"IP_CHECK_TIMEOUT"`
 	StartPort        int         `name:"start-port" help:"Start port for proxy configuration" default:"10000" env:"START_PORT"`

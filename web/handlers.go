@@ -32,6 +32,7 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 			IPCheckService:  config.CLIConfig.IPCheckService,
 			CheckMethod:     config.CLIConfig.CheckMethod,
 			GenMethodURL:    config.CLIConfig.GenMethodURL,
+			ResponseWithLatency: config.CLIConfig.ResponseWithLatency,
 			IpCheckTimeout:  config.CLIConfig.IpCheckTimeout,
 			RecheckSubscription: config.CLIConfig.RecheckSubscription,
 			StartPort:       config.CLIConfig.StartPort,
@@ -94,8 +95,11 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 			http.Error(w, "Config not found", http.StatusNotFound)
 			return
 		}
+		
 
-		time.Sleep(latency)
+		if(config.CLIConfig.ResponseWithLatency){
+			time.Sleep(latency)
+		}
 		
 		if status {
 			w.WriteHeader(http.StatusOK)

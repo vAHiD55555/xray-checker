@@ -24,8 +24,8 @@ type ProxyChecker struct {
 	latencyMetrics sync.Map
 	ipInitialized  bool
 	ipCheckTimeout int
-	GenMethodURL   string
-	CheckMethod string
+	genMethodURL   string
+	checkMethod    string
 }
 
 func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int, genMethodURL string, checkMethod string) *ProxyChecker {
@@ -37,8 +37,8 @@ func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL st
 			Timeout: time.Second * time.Duration(ipCheckTimeout),
 		},
 		ipCheckTimeout: ipCheckTimeout,
-		GenMethodURL:   genMethodURL,
-		CheckMethod:    checkMethod,
+		genMethodURL:   genMethodURL,
+		checkMethod:    checkMethod,
 	}
 }
 
@@ -114,9 +114,9 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 	var checkErr error
 	var logMessage string
 
-	if pc.CheckMethod == "ip" {
+	if pc.checkMethod == "ip" {
 		checkSuccess, logMessage, checkErr = pc.checkByIP(client)
-	} else if pc.CheckMethod == "gen" {
+	} else if pc.checkMethod == "gen" {
 		checkSuccess, checkErr = pc.checkByGen(client)
 		if checkSuccess {
 			logMessage = "Status: 204"
@@ -178,7 +178,7 @@ func (pc *ProxyChecker) checkByIP(client *http.Client) (bool, string, error) {
 }
 
 func (pc *ProxyChecker) checkByGen(client *http.Client) (bool, error) {
-	resp, err := client.Get(pc.GenMethodURL)
+	resp, err := client.Get(pc.genMethodURL)
 	if err != nil {
 		return false, err
 	}

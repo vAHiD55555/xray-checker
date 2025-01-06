@@ -41,21 +41,22 @@ Each metric includes the following labels:
 
 The application can be configured using environment variables or command-line arguments:
 
-| Environment Variable   | Command-Line Argument    | Required | Default                                 | Description                                        |
-| ---------------------- | ------------------------ | -------- | --------------------------------------- | -------------------------------------------------- |
-| `SUBSCRIPTION_URL`     | `--subscription-url`     | Yes      | -                                       | Subscription URL for obtaining configurations      |
-| `RECHECK_SUBSCRIPTION` | `--recheck-subscription` | No       | `true`                                  | Recheck subscription on each check                 |
-| `CHECK_INTERVAL`       | `--check-interval`       | No       | `300`                                   | Check interval in seconds                          |
-| `CHECK_METHOD`         | `--check-method`         | No       | `ip`                                    | Check method (ip/gen)                              |
-| `GEN_METHOD_URL`       | `--gen-method-url`       | No       | `http://cp.cloudflare.com/generate_204` | URL for generating 204 status for check method gen |
-| `IP_CHECK_SERVICE`     | `--ip-check-service`     | No       | `https://api.ipify.org?format=text`     | IP check service (ip/gen)                          |
-| `IP_CHECK_TIMEOUT`     | `--ip-check-timeout`     | No       | `5`                                     | Timeout for IP checking in seconds                 |
-| `START_PORT`           | `--start-port`           | No       | `10000`                                 | Starting port for proxy configurations             |
-| `XRAY_LOG_LEVEL`       | `--xray-log-level`       | No       | `none`                                  | Xray logging level (debug/info/warning/error/none) |
-| `METRICS_PORT`         | `--metrics-port`         | No       | `2112`                                  | Port for metrics                                   |
-| `METRICS_PROTECTED`    | `--metrics-protected`    | No       | `false`                                 | Protect metrics with Basic Auth                    |
-| `METRICS_USERNAME`     | `--metrics-username`     | No       | `metricsUser`                           | Username for Basic Auth                            |
-| `METRICS_PASSWORD`     | `--metrics-password`     | No       | `MetricsVeryHardPassword`               | Password for Basic Auth                            |
+| Environment Variable    | Command-Line Argument     | Required | Default                                 | Description                                        |
+| ----------------------- | ------------------------- | -------- | --------------------------------------- | -------------------------------------------------- |
+| `SUBSCRIPTION_URL`      | `--subscription-url`      | Yes      | -                                       | Subscription URL for obtaining configurations      |
+| `RECHECK_SUBSCRIPTION`  | `--recheck-subscription`  | No       | `true`                                  | Recheck subscription on each check                 |
+| `CHECK_INTERVAL`        | `--check-interval`        | No       | `300`                                   | Check interval in seconds                          |
+| `CHECK_METHOD`          | `--check-method`          | No       | `ip`                                    | Check method (ip/gen)                              |
+| `GEN_METHOD_URL`        | `--gen-method-url`        | No       | `http://cp.cloudflare.com/generate_204` | URL for generating 204 status for check method gen |
+| `IP_CHECK_SERVICE`      | `--ip-check-service`      | No       | `https://api.ipify.org?format=text`     | IP check service (ip/gen)                          |
+| `IP_CHECK_TIMEOUT`      | `--ip-check-timeout`      | No       | `5`                                     | Timeout for IP checking in seconds                 |
+| `START_PORT`            | `--start-port`            | No       | `10000`                                 | Starting port for proxy configurations             |
+| `XRAY_LOG_LEVEL`        | `--xray-log-level`        | No       | `none`                                  | Xray logging level (debug/info/warning/error/none) |
+| `METRICS_PORT`          | `--metrics-port`          | No       | `2112`                                  | Port for metrics                                   |
+| `METRICS_PROTECTED`     | `--metrics-protected`     | No       | `false`                                 | Protect metrics with Basic Auth                    |
+| `METRICS_USERNAME`      | `--metrics-username`      | No       | `metricsUser`                           | Username for Basic Auth                            |
+| `METRICS_PASSWORD`      | `--metrics-password`      | No       | `MetricsVeryHardPassword`               | Password for Basic Auth                            |
+| `RESPONSE_WITH_LATENCY` | `--response-with-latency` | No       | `false`                                 | Add latency to the response for check method gen   |
 
 ### Subscription Format
 

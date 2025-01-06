@@ -25,6 +25,7 @@ type PageData struct {
 	Port            string
 	CheckInterval   int
 	IPCheckService  string
+	ResponseWithLatency bool
 	CheckMethod     string
 	GenMethodURL    string
 	IpCheckTimeout  int
