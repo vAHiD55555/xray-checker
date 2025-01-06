@@ -21,11 +21,14 @@ type ProxyChecker struct {
 	currentIP      string
 	httpClient     *http.Client
 	currentMetrics sync.Map
+	latencyMetrics sync.Map
 	ipInitialized  bool
 	ipCheckTimeout int
+	GenMethodURL   string
+	CheckMethod string
 }
 
-func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int) *ProxyChecker {
+func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int, genMethodURL string, checkMethod string) *ProxyChecker {
 	return &ProxyChecker{
 		proxies:   proxies,
 		startPort: startPort,
@@ -34,6 +37,8 @@ func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL st
 			Timeout: time.Second * time.Duration(ipCheckTimeout),
 		},
 		ipCheckTimeout: ipCheckTimeout,
+		GenMethodURL:   genMethodURL,
+		CheckMethod:    checkMethod,
 	}
 }
 
@@ -76,11 +81,23 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		pc.currentMetrics.Store(metricKey, false)
 	}
 
+	setFailedLatency := func() {
+		metrics.RecordProxyLatency(
+			proxy.Protocol,
+			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
+			proxy.Name,
+			0,
+		)
+		pc.latencyMetrics.Store(metricKey, 0)
+	}
+
 	proxyURL := fmt.Sprintf("socks5://127.0.0.1:%d", pc.startPort+proxy.Index)
 	proxyURLParsed, err := url.Parse(proxyURL)
 	if err != nil {
 		log.Printf("Error parsing proxy URL %s: %v", proxyURL, err)
 		setFailedStatus()
+		setFailedLatency()
+
 		return
 	}
 
@@ -91,35 +108,83 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
 	}
 
-	resp, err := client.Get(pc.ipCheck)
-	if err != nil {
-		log.Printf("%s | Error | %v", proxy.Name, err)
+	start := time.Now()
+
+	var checkSuccess bool
+	var checkErr error
+	var logMessage string
+
+	if pc.CheckMethod == "ip" {
+		checkSuccess, logMessage, checkErr = pc.checkByIP(client)
+	} else if pc.CheckMethod == "gen" {
+		checkSuccess, checkErr = pc.checkByGen(client)
+		if checkSuccess {
+			logMessage = "Status: 204"
+		} else {
+			logMessage = "Check failed"
+		}
+	}
+
+	latency := time.Since(start)
+
+	if checkErr != nil {
+		log.Printf("%s | Error | %v", proxy.Name, checkErr)
 		setFailedStatus()
+		setFailedLatency()
+
 		return
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading response from proxy %s: %v", proxy.Name, err)
+	if !checkSuccess {
+		log.Printf("%s | Failed | %s | Latency: %s", proxy.Name, logMessage, latency)
 		setFailedStatus()
-		return
-	}
+		setFailedLatency()
 
-	proxyIP := string(body)
-	if proxyIP == pc.currentIP {
-		log.Printf("%s | Failed | Source IP: %s | Proxy IP: %s", proxy.Name, pc.currentIP, proxyIP)
-		setFailedStatus()
 	} else {
-		log.Printf("%s | Success | Source IP: %s | Proxy IP: %s", proxy.Name, pc.currentIP, proxyIP)
+		log.Printf("%s | Success | %s | Latency: %s", proxy.Name, logMessage, latency)
 		metrics.RecordProxyStatus(
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
 			1,
 		)
+		metrics.RecordProxyLatency(
+			proxy.Protocol,
+			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
+			proxy.Name,
+			float64(latency.Milliseconds()),
+		)
+
+		pc.latencyMetrics.Store(metricKey, latency)
 		pc.currentMetrics.Store(metricKey, true)
 	}
+}
+
+func (pc *ProxyChecker) checkByIP(client *http.Client) (bool, string, error) {
+	resp, err := client.Get(pc.ipCheck)
+	if err != nil {
+		return false, "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, "", err
+	}
+
+	proxyIP := string(body)
+	logMessage := fmt.Sprintf("Source IP: %s | Proxy IP: %s", pc.currentIP, proxyIP)
+	return proxyIP != pc.currentIP, logMessage, nil
+}
+
+func (pc *ProxyChecker) checkByGen(client *http.Client) (bool, error) {
+	resp, err := client.Get(pc.GenMethodURL)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusNoContent, nil
 }
 
 func (pc *ProxyChecker) ClearMetrics() {
@@ -128,6 +193,7 @@ func (pc *ProxyChecker) ClearMetrics() {
 		parts := strings.Split(metricKey, "|")
 		if len(parts) == 3 {
 			metrics.DeleteProxyStatus(parts[0], parts[1], parts[2])
+			metrics.DeleteProxyLatency(parts[0], parts[1], parts[2])
 		}
 		pc.currentMetrics.Delete(key)
 		return true
@@ -156,7 +222,7 @@ func (pc *ProxyChecker) CheckAllProxies() {
 	wg.Wait()
 }
 
-func (pc *ProxyChecker) GetProxyStatus(name string) (bool, error) {
+func (pc *ProxyChecker) GetProxyStatus(name string) (bool, time.Duration, error) {
 	var metricKey string
 	for _, proxy := range pc.proxies {
 		if proxy.Name == name {
@@ -171,14 +237,20 @@ func (pc *ProxyChecker) GetProxyStatus(name string) (bool, error) {
 	}
 
 	if metricKey == "" {
-		return false, fmt.Errorf("proxy not found")
+		return false, 0, fmt.Errorf("proxy not found")
 	}
 
-	if value, ok := pc.currentMetrics.Load(metricKey); ok {
-		return value.(bool), nil
+	status, ok := pc.currentMetrics.Load(metricKey)
+	if !ok {
+		return false, 0, fmt.Errorf("metric not found")
 	}
 
-	return false, fmt.Errorf("metric not found")
+	latency, _ := pc.latencyMetrics.Load(metricKey)
+	if latency == nil {
+		latency = time.Duration(0)
+	}
+
+	return status.(bool), latency.(time.Duration), nil
 }
 
 func (pc *ProxyChecker) GetProxies() []*models.ProxyConfig {

@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"time"
 	"xray-checker/checker"
 	"xray-checker/config"
 	"xray-checker/models"
@@ -29,6 +30,8 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 			Port:            config.CLIConfig.Port,
 			CheckInterval:   config.CLIConfig.CheckInterval,
 			IPCheckService:  config.CLIConfig.IPCheckService,
+			CheckMethod:     config.CLIConfig.CheckMethod,
+			GenMethodURL:    config.CLIConfig.GenMethodURL,
 			IpCheckTimeout:  config.CLIConfig.IpCheckTimeout,
 			RecheckSubscription: config.CLIConfig.RecheckSubscription,
 			StartPort:       config.CLIConfig.StartPort,
@@ -86,12 +89,14 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 			return
 		}
 
-		status, err := proxyChecker.GetProxyStatus(found.Name)
+		status, latency, err := proxyChecker.GetProxyStatus(found.Name)
 		if err != nil {
 			http.Error(w, "Config not found", http.StatusNotFound)
 			return
 		}
 
+		time.Sleep(latency)
+		
 		if status {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))

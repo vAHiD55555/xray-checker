@@ -37,7 +37,7 @@ func main() {
 		log.Fatalf("Error starting Xray: %v", err)
 	}
 
-	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.StartPort, config.CLIConfig.IPCheckService, config.CLIConfig.IpCheckTimeout)
+	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.StartPort, config.CLIConfig.IPCheckService, config.CLIConfig.IpCheckTimeout, config.CLIConfig.GenMethodURL, config.CLIConfig.CheckMethod)
 	s := gocron.NewScheduler(time.UTC)
 	s.Every(config.CLIConfig.CheckInterval).Seconds().Do(func() {
 		log.Printf("Starting proxy check iteration...")
@@ -65,6 +65,7 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(metrics.GetProxyStatusMetric())
+	registry.MustRegister(metrics.GetProxyLatencyMetric())
 	protectedHandler.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	web.RegisterConfigEndpoints(*proxyConfigs, config.CLIConfig.StartPort)
