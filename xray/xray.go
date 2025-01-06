@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"text/template"
 	"xray-checker/checker"
 	"xray-checker/config"
@@ -28,14 +27,14 @@ func generateConfig(proxies []*models.ProxyConfig, startPort int, xrayLogLevel s
 		XrayLogLevel: xrayLogLevel,
 	}
 
-	tmpl, err := template.New("xray.json.tmpl").
-		Funcs(template.FuncMap{
-			"add": func(a, b int) int { return a + b },
-		}).
-		ParseFiles(filepath.Join("templates", "xray.json.tmpl"))
-	if err != nil {
-		return nil, err
-	}
+    tmpl, err := template.New("xray.json.tmpl").
+        Funcs(template.FuncMap{
+            "add": func(a, b int) int { return a + b },
+        }).
+        ParseFS(templates, "templates/xray.json.tmpl")
+    if err != nil {
+        return nil, err
+    }
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
