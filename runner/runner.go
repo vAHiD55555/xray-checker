@@ -23,7 +23,6 @@ func NewXrayRunner(configFile string) *XrayRunner {
 }
 
 func (r *XrayRunner) Start() error {
-	// Читаем конфиг из файла
 	configBytes, err := os.ReadFile(r.configFile)
 	if err != nil {
 		return fmt.Errorf("error reading config file: %v", err)

@@ -28,6 +28,8 @@ jobs:
           push: true
           build-args: |
             GIT_TAG=${{  github.ref_name }}
+            USERNAME=${{ github.repository_owner }}
+            REPOSITORY_NAME=${{ github.event.repository.name }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/xray-checker:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/xray-checker:${{ github.ref_name }}

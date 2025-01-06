@@ -22,8 +22,10 @@ func Parse(version, commit string) {
 
 type CLI struct {
 	SubscriptionURL  string      `name:"subscription-url" help:"URL of the subscription" required:"true" env:"SUBSCRIPTION_URL"`
-	CheckInterval    int         `name:"check-interval" help:"Interval for proxy checks in minutes" default:"5" env:"CHECK_INTERVAL"`
+	RecheckSubscription bool     `name:"recheck-subscription" help:"Whether to recheck the subscription" default:"true" env:"RECHECK_SUBSCRIPTION"`
+	CheckInterval    int         `name:"check-interval" help:"Interval for proxy checks in seconds" default:"300" env:"CHECK_INTERVAL"`
 	IPCheckService   string      `name:"ip-check-service" help:"Service URL for IP checking" default:"https://api.ipify.org?format=text" env:"IP_CHECK_SERVICE"`
+	IpCheckTimeout   int         `name:"ip-check-timeout" help:"Timeout for IP checking in seconds" default:"30" env:"IP_CHECK_TIMEOUT"`
 	StartPort        int         `name:"start-port" help:"Start port for proxy configuration" default:"10000" env:"START_PORT"`
 	XrayLogLevel     string      `name:"xray-log-level" help:"Xray log level (debug|info|warning|error|none)" default:"none" env:"XRAY_LOG_LEVEL"`
 	Port             string      `name:"metrics-port" help:"Port to listen on" default:"2112" env:"METRICS_PORT"`

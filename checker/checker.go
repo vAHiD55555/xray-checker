@@ -21,20 +21,27 @@ type ProxyChecker struct {
 	currentIP      string
 	httpClient     *http.Client
 	currentMetrics sync.Map
+	ipInitialized  bool
+	ipCheckTimeout int
 }
 
-func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string) *ProxyChecker {
+func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int) *ProxyChecker {
 	return &ProxyChecker{
 		proxies:   proxies,
 		startPort: startPort,
 		ipCheck:   ipCheckURL,
 		httpClient: &http.Client{
-			Timeout: time.Second * 30,
+			Timeout: time.Second * time.Duration(ipCheckTimeout),
 		},
+		ipCheckTimeout: ipCheckTimeout,
 	}
 }
 
 func (pc *ProxyChecker) GetCurrentIP() (string, error) {
+	if pc.ipInitialized && pc.currentIP != "" {
+		return pc.currentIP, nil
+	}
+
 	resp, err := pc.httpClient.Get(pc.ipCheck)
 	if err != nil {
 		return "", fmt.Errorf("error getting current IP: %v", err)
@@ -47,6 +54,7 @@ func (pc *ProxyChecker) GetCurrentIP() (string, error) {
 	}
 
 	pc.currentIP = string(body)
+	pc.ipInitialized = true
 	return pc.currentIP, nil
 }
 
@@ -80,7 +88,7 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		Transport: &http.Transport{
 			Proxy: http.ProxyURL(proxyURLParsed),
 		},
-		Timeout: time.Second * 30,
+		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
 	}
 
 	resp, err := client.Get(pc.ipCheck)
@@ -137,9 +145,15 @@ func (pc *ProxyChecker) CheckAllProxies() {
 		return
 	}
 
+	var wg sync.WaitGroup
 	for _, proxy := range pc.proxies {
-		pc.CheckProxy(proxy)
+		wg.Add(1)
+		go func(p *models.ProxyConfig) {
+			defer wg.Done()
+			pc.CheckProxy(p)
+		}(proxy)
 	}
+	wg.Wait()
 }
 
 func (pc *ProxyChecker) GetProxyStatus(name string) (bool, error) {

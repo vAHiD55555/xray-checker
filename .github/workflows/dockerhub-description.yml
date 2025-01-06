@@ -19,7 +19,7 @@ jobs:
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
         with:
-          destination_container_repo: kutovoys/xray-checker
+          destination_container_repo: ${{ secrets.DOCKERHUB_USERNAME }}/xray-checker
           provider: dockerhub
           short_description: "Xray Checker: A Prometheus exporter for monitoring Xray proxies"
           readme_file: "README.md"

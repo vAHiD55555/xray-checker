@@ -2,7 +2,6 @@ package parser
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -30,11 +29,20 @@ func InitializeConfiguration(configFile string) (*[]*models.ProxyConfig, error) 
 }
 
 func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
-	if !strings.HasSuffix(subscriptionURL, "/info") {
-		subscriptionURL = subscriptionURL + "/info"
+	if _, err := url.Parse(subscriptionURL); err != nil {
+		return nil, fmt.Errorf("error parsing URL: %v", err)
 	}
 
-	resp, err := http.Get(subscriptionURL)
+	req, err := http.NewRequest("GET", subscriptionURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	req.Header.Set("User-Agent", "Xray-Checker")
+	req.Header.Set("Accept", "*/*")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error getting subscription: %v", err)
 	}
@@ -45,12 +53,18 @@ func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
 		return nil, fmt.Errorf("error reading response: %v", err)
 	}
 
-	var subResp models.SubscriptionResponse
-	if err := json.Unmarshal(body, &subResp); err != nil {
-		return nil, fmt.Errorf("error unmarshaling response: %v", err)
+	decoded, err := base64.StdEncoding.DecodeString(string(body))
+	if err != nil {
+		links := strings.Split(string(body), "\n")
+		_, err = ParseProxyURL(links[0])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse config: %v", err)
+		}
+		return links, nil
 	}
 
-	return subResp.Links, nil
+	links := strings.Split(string(decoded), "\n")
+	return links, nil
 }
 
 func ParseProxyURL(proxyURL string) (*models.ProxyConfig, error) {
@@ -88,6 +102,10 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	}
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+	}
+	
 
 	query := u.Query()
 
@@ -119,6 +137,9 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 	}
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+	}
 
 	query := u.Query()
 
@@ -157,6 +178,10 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 	}
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+	}
+	
 
 	return config, nil
 }

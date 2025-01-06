@@ -25,3 +25,4 @@ go.work.sum
 .env
 xray-checker
 xray_config.json
+docker-compose.yml
