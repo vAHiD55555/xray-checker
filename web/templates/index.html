@@ -34,7 +34,8 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
         line-height: 1.6;
         max-width: 800px;
         margin: 40px auto;
@@ -158,7 +159,9 @@
     </style>
   </head>
   <body>
-    <button class="theme-toggle" onclick="toggleTheme()">🌓 Switch Theme</button>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      🌓 Switch Theme
+    </button>
 
     <h1>Xray Checker</h1>
 
@@ -167,14 +170,16 @@
       <strong>Commit:</strong> {{.Commit}}<br />
       <strong>Server Port:</strong> {{.Port}}<br />
       <strong>Check Interval:</strong> {{.CheckInterval}} seconds<br />
-      <strong>IP Check Service:</strong>
-      <a href="{{.IPCheckService}}" target="_blank">{{.IPCheckService}}</a><br />
-      <strong>Gen Method URL:</strong> <a href="{{.GenMethodURL}}" target="_blank">{{.GenMethodURL}}</a><br />
+      <strong>IP Check Url:</strong>
+      <a href="{{.IPCheckUrl}}" target="_blank">{{.IPCheckUrl}}</a><br />
+      <strong>Status Check Url:</strong>
+      <a href="{{.StatusCheckUrl}}" target="_blank">{{.StatusCheckUrl}}</a
+      ><br />
       <br />
       <strong>Check Method:</strong> {{.CheckMethod}}<br />
-      <strong>Response With Latency:</strong> {{.ResponseWithLatency}}<br />
-      <strong>IP Check Timeout:</strong> {{.IpCheckTimeout}} seconds<br />
-      <strong>Recheck Subscription:</strong> {{.RecheckSubscription}}<br />
+      <strong>Simulate Latency on Endpoint:</strong> {{.SimulateLatency}}<br />
+      <strong>IP Check Timeout:</strong> {{.Timeout}} seconds<br />
+      <strong>Update Subscription:</strong> {{.SubscriptionUpdate}}<br />
     </div>
 
     <div class="info-box">
@@ -186,23 +191,28 @@
     {{ if .Endpoints }}
     <h2>Config Endpoints</h2>
     <div class="info-box warning">
-      <strong>Important:</strong> The URLs listed below can be used for status monitoring in systems like Uptime-Kuma.
-      The endpoint will return status 200 OK if the proxy is working, and status 503 Service Unavailable if it's not
-      functioning.
+      <strong>Important:</strong> The URLs listed below can be used for status
+      monitoring in systems like Uptime-Kuma. The endpoint will return status
+      200 OK if the proxy is working, and status 503 Service Unavailable if it's
+      not functioning.
     </div>
     <ul class="endpoints">
       {{ range .Endpoints }}
       <li>
         <span class="endpoint-link"><a href="{{.URL}}">{{.Name}}</a></span>
         <span class="proxy-port">(Proxy Port: {{.ProxyPort}})</span>
-        <button class="copy-button" onclick="copyToClipboard(this, '{{.URL}}')">Copy URL</button>
+        <button class="copy-button" onclick="copyToClipboard(this, '{{.URL}}')">
+          Copy URL
+        </button>
       </li>
       {{ end }}
     </ul>
     {{ end }}
 
     <div class="footer">
-      <a href="https://github.com/kutovoys/xray-checker" target="_blank">GitHub Repository</a>
+      <a href="https://github.com/kutovoys/xray-checker" target="_blank"
+        >GitHub Repository</a
+      >
       | Made with ❤️ by
       <a href="https://github.com/kutovoys" target="_blank">kutovoys</a>
     </div>
