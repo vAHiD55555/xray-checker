@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"strings"
 	"sync"
@@ -26,6 +27,7 @@ type ProxyChecker struct {
 	ipCheckTimeout int
 	genMethodURL   string
 	checkMethod    string
+	lastDuration   time.Duration
 }
 
 func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int, genMethodURL string, checkMethod string) *ProxyChecker {
@@ -97,27 +99,17 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		log.Printf("Error parsing proxy URL %s: %v", proxyURL, err)
 		setFailedStatus()
 		setFailedLatency()
-
 		return
 	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURLParsed),
-		},
-		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
-	}
-
-	start := time.Now()
 
 	var checkSuccess bool
 	var checkErr error
 	var logMessage string
 
 	if pc.checkMethod == "ip" {
-		checkSuccess, logMessage, checkErr = pc.checkByIP(client)
+		checkSuccess, logMessage, checkErr = pc.checkByIP(proxyURLParsed)
 	} else if pc.checkMethod == "gen" {
-		checkSuccess, checkErr = pc.checkByGen(client)
+		checkSuccess, checkErr = pc.checkByGen(proxyURLParsed)
 		if checkSuccess {
 			logMessage = "Status: 204"
 		} else {
@@ -125,23 +117,19 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		}
 	}
 
-	latency := time.Since(start)
-
 	if checkErr != nil {
 		log.Printf("%s | Error | %v", proxy.Name, checkErr)
 		setFailedStatus()
 		setFailedLatency()
-
 		return
 	}
 
 	if !checkSuccess {
-		log.Printf("%s | Failed | %s | Latency: %s", proxy.Name, logMessage, latency)
+		log.Printf("%s | Failed | %s | Latency: %s", proxy.Name, logMessage, pc.lastDuration)
 		setFailedStatus()
 		setFailedLatency()
-
 	} else {
-		log.Printf("%s | Success | %s | Latency: %s", proxy.Name, logMessage, latency)
+		log.Printf("%s | Success | %s | Latency: %s", proxy.Name, logMessage, pc.lastDuration)
 		metrics.RecordProxyStatus(
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
@@ -152,16 +140,41 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
-			float64(latency.Milliseconds()),
+			float64(pc.lastDuration.Milliseconds()),
 		)
 
-		pc.latencyMetrics.Store(metricKey, latency)
+		pc.latencyMetrics.Store(metricKey, pc.lastDuration)
 		pc.currentMetrics.Store(metricKey, true)
 	}
 }
 
-func (pc *ProxyChecker) checkByIP(client *http.Client) (bool, string, error) {
-	resp, err := client.Get(pc.ipCheck)
+func (pc *ProxyChecker) checkByIP(proxyURL *url.URL) (bool, string, error) {
+	var start time.Time
+
+	wrappedTrace := &httptrace.ClientTrace{
+		GotConn: func(info httptrace.GotConnInfo) {
+			start = time.Now()
+		},
+		GotFirstResponseByte: func() {
+			pc.lastDuration = time.Since(start)
+		},
+	}
+
+	req, err := http.NewRequest("GET", pc.ipCheck, nil)
+	if err != nil {
+		return false, "", err
+	}
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), wrappedTrace))
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:             http.ProxyURL(proxyURL),
+			DisableKeepAlives: true,
+		},
+		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, "", err
 	}
@@ -177,8 +190,33 @@ func (pc *ProxyChecker) checkByIP(client *http.Client) (bool, string, error) {
 	return proxyIP != pc.currentIP, logMessage, nil
 }
 
-func (pc *ProxyChecker) checkByGen(client *http.Client) (bool, error) {
-	resp, err := client.Get(pc.genMethodURL)
+func (pc *ProxyChecker) checkByGen(proxyURL *url.URL) (bool, error) {
+	var start time.Time
+
+	wrappedTrace := &httptrace.ClientTrace{
+		GotConn: func(info httptrace.GotConnInfo) {
+			start = time.Now()
+		},
+		GotFirstResponseByte: func() {
+			pc.lastDuration = time.Since(start)
+		},
+	}
+
+	req, err := http.NewRequest("GET", pc.genMethodURL, nil)
+	if err != nil {
+		return false, err
+	}
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), wrappedTrace))
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:             http.ProxyURL(proxyURL),
+			DisableKeepAlives: true,
+		},
+		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
