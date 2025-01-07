@@ -14,14 +14,14 @@ import (
 )
 
 func InitializeConfiguration(configFile string) (*[]*models.ProxyConfig, error) {
-	configs, err := ParseSubscription(config.CLIConfig.SubscriptionURL)
+	configs, err := ParseSubscription(config.CLIConfig.Subscription.URL)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing subscription: %v", err)
 	}
 	proxyConfigs := &configs
 
 	xray.PrepareProxyConfigs(*proxyConfigs)
-	if err := xray.GenerateAndSaveConfig(*proxyConfigs, config.CLIConfig.StartPort, configFile, config.CLIConfig.XrayLogLevel); err != nil {
+	if err := xray.GenerateAndSaveConfig(*proxyConfigs, config.CLIConfig.Xray.StartPort, configFile, config.CLIConfig.Xray.LogLevel); err != nil {
 		return nil, fmt.Errorf("error generating Xray config: %v", err)
 	}
 
@@ -105,7 +105,6 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	if config.Port == 0 || config.Port == 1 {
 		return nil, fmt.Errorf("Skipping port: %d", config.Port)
 	}
-	
 
 	query := u.Query()
 
@@ -181,7 +180,6 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 	if config.Port == 0 || config.Port == 1 {
 		return nil, fmt.Errorf("Skipping port: %d", config.Port)
 	}
-	
 
 	return config, nil
 }

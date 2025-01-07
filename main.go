@@ -37,18 +37,18 @@ func main() {
 		log.Fatalf("Error starting Xray: %v", err)
 	}
 
-	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.StartPort, config.CLIConfig.IPCheckService, config.CLIConfig.IpCheckTimeout)
+	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.Xray.StartPort, config.CLIConfig.Proxy.IpCheckUrl, config.CLIConfig.Proxy.Timeout, config.CLIConfig.Proxy.StatusCheckUrl, config.CLIConfig.Proxy.CheckMethod)
 	s := gocron.NewScheduler(time.UTC)
-	s.Every(config.CLIConfig.CheckInterval).Seconds().Do(func() {
+	s.Every(config.CLIConfig.Proxy.CheckInterval).Seconds().Do(func() {
 		log.Printf("Starting proxy check iteration...")
-		if config.CLIConfig.RecheckSubscription {
+		if config.CLIConfig.Subscription.Update {
 			log.Printf("Updating subscription...")
-			newConfigs, err := parser.ParseSubscription(config.CLIConfig.SubscriptionURL)
+			newConfigs, err := parser.ParseSubscription(config.CLIConfig.Subscription.URL)
 			if err != nil {
 				log.Printf("Error checking subscription updates: %v", err)
-		} else if !xray.IsConfigsEqual(*proxyConfigs, newConfigs) {
-			if err := xray.UpdateConfiguration(newConfigs, proxyConfigs, xrayRunner, proxyChecker); err != nil {
-				log.Printf("Error updating configuration: %v", err)
+			} else if !xray.IsConfigsEqual(*proxyConfigs, newConfigs) {
+				if err := xray.UpdateConfiguration(newConfigs, proxyConfigs, xrayRunner, proxyChecker); err != nil {
+					log.Printf("Error updating configuration: %v", err)
 				}
 			}
 		}
@@ -65,22 +65,23 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(metrics.GetProxyStatusMetric())
+	registry.MustRegister(metrics.GetProxyLatencyMetric())
 	protectedHandler.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
-	web.RegisterConfigEndpoints(*proxyConfigs, config.CLIConfig.StartPort)
+	web.RegisterConfigEndpoints(*proxyConfigs, config.CLIConfig.Xray.StartPort)
 	protectedHandler.Handle("/config/", web.ConfigStatusHandler(proxyChecker))
 
-	if config.CLIConfig.ProtectedMetrics {
+	if config.CLIConfig.Metrics.Protected {
 		mux.Handle("/", web.BasicAuthMiddleware(
-			config.CLIConfig.MetricsUsername,
-			config.CLIConfig.MetricsPassword,
+			config.CLIConfig.Metrics.Username,
+			config.CLIConfig.Metrics.Password,
 		)(protectedHandler))
 	} else {
 		mux.Handle("/", protectedHandler)
 	}
 
-	log.Printf("Starting server on :%s", config.CLIConfig.Port)
-	if err := http.ListenAndServe(":"+config.CLIConfig.Port, mux); err != nil {
+	log.Printf("Starting server on :%s", config.CLIConfig.Metrics.Port)
+	if err := http.ListenAndServe(":"+config.CLIConfig.Metrics.Port, mux); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }

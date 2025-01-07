@@ -27,9 +27,10 @@ Xray Checker - это инструмент для мониторинга дос�
 
 Экспортер предоставляет следующие метрики:
 
-| Название            | Описание                                    |
-| ------------------- | ------------------------------------------- |
-| `xray_proxy_status` | Статус прокси (1: работает, 0: не работает) |
+| Название                | Описание                                    |
+| ----------------------- | ------------------------------------------- |
+| `xray_proxy_status`     | Статус прокси (1: работает, 0: не работает) |
+| `xray_proxy_latency_ms` | Задержка через прокси в миллисекундах       |
 
 Каждая метрика включает следующие лейблы:
 
@@ -39,21 +40,27 @@ Xray Checker - это инструмент для мониторинга дос�
 
 ## Конфигурация
 
-Приложение можно настроить с помощью переменных окружения или аргументов командной строки:
-
-| Переменная окружения   | Аргумент командной строки | Обязательно | Значение по умолчанию               | Описание                                                      |
-| ---------------------- | ------------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------- |
-| `SUBSCRIPTION_URL`     | `--subscription-url`      | Yes         | -                                   | URL подписки для получения конфигураций                       |
-| `RECHECK_SUBSCRIPTION` | `--recheck-subscription`  | No          | `true`                              | Обновлять подписку при каждой проверке (true) или нет (false) |
-| `CHECK_INTERVAL`       | `--check-interval`        | No          | `300`                               | Интервал проверки в секундах                                  |
-| `IP_CHECK_SERVICE`     | `--ip-check-service`      | No          | `https://api.ipify.org?format=text` | Сервис для проверки IP                                        |
-| `IP_CHECK_TIMEOUT`     | `--ip-check-timeout`      | No          | `30`                                | Таймаут для проверки IP                                       |
-| `START_PORT`           | `--start-port`            | No          | `10000`                             | Стартовый порт для конфигураций прокси                        |
-| `XRAY_LOG_LEVEL`       | `--xray-log-level`        | No          | `none`                              | Уровень логирования Xray (debug/info/warning/error/none)      |
-| `METRICS_PORT`         | `--metrics-port`          | No          | `2112`                              | Порт для метрик                                               |
-| `METRICS_PROTECTED`    | `--metrics-protected`     | No          | `false`                             | Защита метрик с помощью Basic Auth                            |
-| `METRICS_USERNAME`     | `--metrics-username`      | No          | `metricsUser`                       | Имя пользователя для Basic Auth                               |
-| `METRICS_PASSWORD`     | `--metrics-password`      | No          | `MetricsVeryHardPassword`           | Пароль для Basic Auth                                         |
+| Переменная окружения           | Аргумент командной строки        | По умолчанию                            | Описание                                            |
+| ------------------------------ | -------------------------------- | --------------------------------------- | --------------------------------------------------- |
+| **Subscription**               |
+| `SUBSCRIPTION_URL`             | `--subscription-url`             | -                                       | URL подписки для получения конфигураций             |
+| `SUBSCRIPTION_UPDATE`          | `--subscription-update`          | `true`                                  | Обновлять подписку автоматически                    |
+| `SUBSCRIPTION_UPDATE_INTERVAL` | `--subscription-update-interval` | `300`                                   | Интервал обновления подписки в секундах             |
+| **Proxy**                      |
+| `PROXY_CHECK_INTERVAL`         | `--proxy-check-interval`         | `300`                                   | Интервал проверки в секундах                        |
+| `PROXY_CHECK_METHOD`           | `--proxy-check-method`           | `ip`                                    | Метод проверки (ip/status)                          |
+| `PROXY_IP_CHECK_URL`           | `--proxy-ip-check-url`           | `https://api.ipify.org?format=text`     | URL сервиса проверки IP                             |
+| `PROXY_STATUS_CHECK_URL`       | `--proxy-status-check-url`       | `http://cp.cloudflare.com/generate_204` | URL для проверки статуса                            |
+| `PROXY_TIMEOUT`                | `--proxy-timeout`                | `30`                                    | Таймаут проверки в секундах                         |
+| `SIMULATE_LATENCY`             | `--simulate-latency`             | `true`                                  | Добавлять задержку к ответу                         |
+| **Xray**                       |
+| `XRAY_START_PORT`              | `--xray-start-port`              | `10000`                                 | Начальный порт для конфигураций                     |
+| `XRAY_LOG_LEVEL`               | `--xray-log-level`               | `none`                                  | Уровень логирования (debug/info/warning/error/none) |
+| **Metrics**                    |
+| `METRICS_PORT`                 | `--metrics-port`                 | `2112`                                  | Порт для метрик                                     |
+| `METRICS_PROTECTED`            | `--metrics-protected`            | `false`                                 | Защита метрик Basic Auth                            |
+| `METRICS_USERNAME`             | `--metrics-username`             | `metricsUser`                           | Имя пользователя для Basic Auth                     |
+| `METRICS_PASSWORD`             | `--metrics-password`             | `MetricsVeryHardPassword`               | Пароль для Basic Auth                               |
 
 ### Формат подписки
 
@@ -80,15 +87,19 @@ User-Agent: Xray-Checker
 ```bash
 # Расширенное использование с пользовательскими настройками
 ./xray-checker \
-  --subscription-url="https://your-subscription-url/sub" \
-  --check-interval=120 \
-  --ip-check-timeout=5 \
-  --metrics-port=2112 \
-  --start-port=10000 \
-  --xray-log-level=none \
-  --metrics-protected=true \
-  --metrics-username=custom_user \
-  --metrics-password=custom_pass
+ --subscription-url="https://your-subscription-url/sub" \
+ --proxy-check-interval=300 \
+ --proxy-timeout=5 \
+ --proxy-check-method=ip \
+ --proxy-ip-check-url="https://api.ipify.org?format=text" \
+ --proxy-status-check-url="http://cp.cloudflare.com/generate_204" \
+ --simulate-latency=true \
+ --xray-start-port=10000 \
+ --xray-log-level=none \
+ --metrics-port=2112 \
+ --metrics-protected=true \
+ --metrics-username=custom_user \
+ --metrics-password=custom_pass
 ```
 
 ### Docker
@@ -96,8 +107,11 @@ User-Agent: Xray-Checker
 ```bash
 docker run -d \
   -e SUBSCRIPTION_URL=https://your-subscription-url/sub \
-  -e CHECK_INTERVAL=5 \
-  -p 2112:2112 \
+  -e PROXY_CHECK_INTERVAL=300 \
+  -e PROXY_CHECK_METHOD=ip \
+  -e PROXY_TIMEOUT=30 \
+  -e XRAY_START_PORT=10000 \
+  -e METRICS_PORT=2112 \
   kutovoys/xray-checker
 ```
 
@@ -109,7 +123,10 @@ services:
     image: kutovoys/xray-checker
     environment:
       - SUBSCRIPTION_URL=https://your-subscription-url/sub
-      - CHECK_INTERVAL=300
+      - PROXY_CHECK_INTERVAL=300
+      - PROXY_CHECK_METHOD=ip
+      - PROXY_TIMEOUT=30
+      - XRAY_START_PORT=10000
       - METRICS_PROTECTED=true
       - METRICS_USERNAME=custom_user
       - METRICS_PASSWORD=custom_password

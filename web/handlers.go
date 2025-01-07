@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"time"
 	"xray-checker/checker"
 	"xray-checker/config"
 	"xray-checker/models"
@@ -24,15 +25,18 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 		}
 
 		data := PageData{
-			Version:         version,
-			Commit:          commit,
-			Port:            config.CLIConfig.Port,
-			CheckInterval:   config.CLIConfig.CheckInterval,
-			IPCheckService:  config.CLIConfig.IPCheckService,
-			IpCheckTimeout:  config.CLIConfig.IpCheckTimeout,
-			RecheckSubscription: config.CLIConfig.RecheckSubscription,
-			StartPort:       config.CLIConfig.StartPort,
-			Endpoints:       registeredEndpoints,
+			Version:            version,
+			Commit:             commit,
+			Port:               config.CLIConfig.Metrics.Port,
+			CheckInterval:      config.CLIConfig.Proxy.CheckInterval,
+			IPCheckUrl:         config.CLIConfig.Proxy.IpCheckUrl,
+			CheckMethod:        config.CLIConfig.Proxy.CheckMethod,
+			StatusCheckUrl:     config.CLIConfig.Proxy.StatusCheckUrl,
+			SimulateLatency:    config.CLIConfig.Proxy.SimulateLatency,
+			Timeout:            config.CLIConfig.Proxy.Timeout,
+			SubscriptionUpdate: config.CLIConfig.Subscription.Update,
+			StartPort:          config.CLIConfig.Xray.StartPort,
+			Endpoints:          registeredEndpoints,
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -86,10 +90,14 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 			return
 		}
 
-		status, err := proxyChecker.GetProxyStatus(found.Name)
+		status, latency, err := proxyChecker.GetProxyStatus(found.Name)
 		if err != nil {
 			http.Error(w, "Config not found", http.StatusNotFound)
 			return
+		}
+
+		if config.CLIConfig.Proxy.SimulateLatency {
+			time.Sleep(time.Duration(latency))
 		}
 
 		if status {
