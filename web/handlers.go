@@ -98,7 +98,7 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 		
 
 		if(config.CLIConfig.ResponseWithLatency){
-			time.Sleep(latency)
+			time.Sleep(time.Duration(latency))
 		}
 		
 		if status {

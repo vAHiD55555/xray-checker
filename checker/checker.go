@@ -86,9 +86,9 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
-			0,
+			time.Duration(0),
 		)
-		pc.latencyMetrics.Store(metricKey, 0)
+		pc.latencyMetrics.Store(metricKey, time.Duration(0))
 	}
 
 	proxyURL := fmt.Sprintf("socks5://127.0.0.1:%d", pc.startPort+proxy.Index)
@@ -156,7 +156,7 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
-			float64(latency.Milliseconds()),
+			latency,
 		)
 
 		pc.latencyMetrics.Store(metricKey, latency)

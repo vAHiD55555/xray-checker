@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -35,8 +37,8 @@ func RecordProxyStatus(protocol, address, name string, value float64) {
 }
 
 
-func RecordProxyLatency(protocol, address, name string, value float64) {
-	proxyLatency.WithLabelValues(protocol, address, name).Set(value)
+func RecordProxyLatency(protocol, address, name string, value time.Duration) {
+	proxyLatency.WithLabelValues(protocol, address, name).Set(float64(value.Milliseconds()))
 }
 
 func DeleteProxyStatus(protocol, address, name string) {
