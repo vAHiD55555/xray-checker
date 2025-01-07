@@ -27,9 +27,10 @@ Xray Checker is a tool for monitoring proxy server availability, supporting VLES
 
 The exporter provides the following metrics:
 
-| Name                | Description                               |
-| ------------------- | ----------------------------------------- |
-| `xray_proxy_status` | Proxy status (1: working, 0: not working) |
+| Name                    | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `xray_proxy_status`     | Proxy status (1: working, 0: not working) |
+| `xray_proxy_latency_ms` | Proxy latency in milliseconds             |
 
 Each metric includes the following labels:
 
@@ -41,20 +42,21 @@ Each metric includes the following labels:
 
 | Environment Variable           | CLI Argument                     | Default                                 | Description                               |
 | ------------------------------ | -------------------------------- | --------------------------------------- | ----------------------------------------- |
+| **Subscription**               |
 | `SUBSCRIPTION_URL`             | `--subscription-url`             | -                                       | Subscription URL for proxy configurations |
 | `SUBSCRIPTION_UPDATE`          | `--subscription-update`          | `true`                                  | Auto-update subscription                  |
 | `SUBSCRIPTION_UPDATE_INTERVAL` | `--subscription-update-interval` | `300`                                   | Subscription update interval in seconds   |
-|                                |                                  |                                         |                                           |
+| **Proxy**                      |
 | `PROXY_CHECK_INTERVAL`         | `--proxy-check-interval`         | `300`                                   | Check interval in seconds                 |
 | `PROXY_CHECK_METHOD`           | `--proxy-check-method`           | `ip`                                    | Check method (ip/status)                  |
 | `PROXY_IP_CHECK_URL`           | `--proxy-ip-check-url`           | `https://api.ipify.org?format=text`     | IP check service URL                      |
 | `PROXY_STATUS_CHECK_URL`       | `--proxy-status-check-url`       | `http://cp.cloudflare.com/generate_204` | Status check URL                          |
 | `PROXY_TIMEOUT`                | `--proxy-timeout`                | `30`                                    | Check timeout in seconds                  |
 | `SIMULATE_LATENCY`             | `--simulate-latency`             | `true`                                  | Add latency to response                   |
-|                                |                                  |                                         |                                           |
+| **Xray**                       |
 | `XRAY_START_PORT`              | `--xray-start-port`              | `10000`                                 | Starting port for configurations          |
 | `XRAY_LOG_LEVEL`               | `--xray-log-level`               | `none`                                  | Log level (debug/info/warning/error/none) |
-|                                |                                  |                                         |                                           |
+| **Metrics**                    |
 | `METRICS_PORT`                 | `--metrics-port`                 | `2112`                                  | Metrics port                              |
 | `METRICS_PROTECTED`            | `--metrics-protected`            | `false`                                 | Protect metrics with Basic Auth           |
 | `METRICS_USERNAME`             | `--metrics-username`             | `metricsUser`                           | Basic Auth username                       |
