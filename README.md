@@ -39,24 +39,26 @@ Each metric includes the following labels:
 
 ## Configuration
 
-The application can be configured using environment variables or command-line arguments:
-
-| Environment Variable    | Command-Line Argument     | Required | Default                                 | Description                                        |
-| ----------------------- | ------------------------- | -------- | --------------------------------------- | -------------------------------------------------- |
-| `SUBSCRIPTION_URL`      | `--subscription-url`      | Yes      | -                                       | Subscription URL for obtaining configurations      |
-| `RECHECK_SUBSCRIPTION`  | `--recheck-subscription`  | No       | `true`                                  | Recheck subscription on each check                 |
-| `CHECK_INTERVAL`        | `--check-interval`        | No       | `300`                                   | Check interval in seconds                          |
-| `CHECK_METHOD`          | `--check-method`          | No       | `ip`                                    | Check method (ip/gen)                              |
-| `GEN_METHOD_URL`        | `--gen-method-url`        | No       | `http://cp.cloudflare.com/generate_204` | URL for generating 204 status for check method gen |
-| `IP_CHECK_SERVICE`      | `--ip-check-service`      | No       | `https://api.ipify.org?format=text`     | IP check service (ip/gen)                          |
-| `IP_CHECK_TIMEOUT`      | `--ip-check-timeout`      | No       | `5`                                     | Timeout for IP checking in seconds                 |
-| `START_PORT`            | `--start-port`            | No       | `10000`                                 | Starting port for proxy configurations             |
-| `XRAY_LOG_LEVEL`        | `--xray-log-level`        | No       | `none`                                  | Xray logging level (debug/info/warning/error/none) |
-| `METRICS_PORT`          | `--metrics-port`          | No       | `2112`                                  | Port for metrics                                   |
-| `METRICS_PROTECTED`     | `--metrics-protected`     | No       | `false`                                 | Protect metrics with Basic Auth                    |
-| `METRICS_USERNAME`      | `--metrics-username`      | No       | `metricsUser`                           | Username for Basic Auth                            |
-| `METRICS_PASSWORD`      | `--metrics-password`      | No       | `MetricsVeryHardPassword`               | Password for Basic Auth                            |
-| `RESPONSE_WITH_LATENCY` | `--response-with-latency` | No       | `false`                                 | Add latency to the response for check method gen   |
+| Group            | Environment Variable       | CLI Argument                 | Default                                 | Description                               |
+| ---------------- | -------------------------- | ---------------------------- | --------------------------------------- | ----------------------------------------- |
+| **Subscription** |
+|                  | `SUBSCRIPTION_URL`         | `--subscription-url`         | -                                       | Subscription URL for proxy configurations |
+|                  | `AUTO_UPDATE_SUBSCRIPTION` | `--auto-update-subscription` | `true`                                  | Update subscription on each check         |
+| **Proxy**        |
+|                  | `PROXY_CHECK_INTERVAL`     | `--proxy-check-interval`     | `300`                                   | Check interval in seconds                 |
+|                  | `PROXY_CHECK_METHOD`       | `--proxy-check-method`       | `ip`                                    | Check method (ip/status)                  |
+|                  | `PROXY_IP_CHECK_URL`       | `--proxy-ip-check-url`       | `https://api.ipify.org?format=text`     | IP check service URL                      |
+|                  | `PROXY_STATUS_CHECK_URL`   | `--proxy-status-check-url`   | `http://cp.cloudflare.com/generate_204` | Status check URL                          |
+|                  | `PROXY_TIMEOUT`            | `--proxy-timeout`            | `30`                                    | Check timeout in seconds                  |
+|                  | `SIMULATE_LATENCY`         | `--simulate-latency`         | `true`                                  | Add latency to response                   |
+| **Xray**         |
+|                  | `XRAY_START_PORT`          | `--xray-start-port`          | `10000`                                 | Starting port for configurations          |
+|                  | `XRAY_LOG_LEVEL`           | `--xray-log-level`           | `none`                                  | Log level (debug/info/warning/error/none) |
+| **Metrics**      |
+|                  | `METRICS_PORT`             | `--metrics-port`             | `2112`                                  | Metrics port                              |
+|                  | `METRICS_PROTECTED`        | `--metrics-protected`        | `false`                                 | Protect metrics with Basic Auth           |
+|                  | `METRICS_USERNAME`         | `--metrics-username`         | `metricsUser`                           | Basic Auth username                       |
+|                  | `METRICS_PASSWORD`         | `--metrics-password`         | `MetricsVeryHardPassword`               | Basic Auth password                       |
 
 ### Subscription Format
 
@@ -84,11 +86,15 @@ User-Agent: Xray-Checker
 # Advanced usage with custom settings
 ./xray-checker \
   --subscription-url="https://your-subscription-url/sub" \
-  --check-interval=300 \
-  --ip-check-timeout=5 \
-  --metrics-port=2112 \
-  --start-port=10000 \
+  --proxy-check-interval=300 \
+  --proxy-timeout=5 \
+  --proxy-check-method=ip \
+  --proxy-ip-check-url="https://api.ipify.org?format=text" \
+  --proxy-status-check-url="http://cp.cloudflare.com/generate_204" \
+  --simulate-latency=true \
+  --xray-start-port=10000 \
   --xray-log-level=none \
+  --metrics-port=2112 \
   --metrics-protected=true \
   --metrics-username=custom_user \
   --metrics-password=custom_pass
@@ -99,8 +105,11 @@ User-Agent: Xray-Checker
 ```bash
 docker run -d \
   -e SUBSCRIPTION_URL=https://your-subscription-url/sub \
-  -e CHECK_INTERVAL=300 \
-  -p 2112:2112 \
+  -e PROXY_CHECK_INTERVAL=300 \
+  -e PROXY_CHECK_METHOD=ip \
+  -e PROXY_TIMEOUT=30 \
+  -e XRAY_START_PORT=10000 \
+  -e METRICS_PORT=2112 \
   kutovoys/xray-checker
 ```
 
@@ -112,7 +121,10 @@ services:
     image: kutovoys/xray-checker
     environment:
       - SUBSCRIPTION_URL=https://your-subscription-url/sub
-      - CHECK_INTERVAL=300
+      - PROXY_CHECK_INTERVAL=300
+      - PROXY_CHECK_METHOD=ip
+      - PROXY_TIMEOUT=30
+      - XRAY_START_PORT=10000
       - METRICS_PROTECTED=true
       - METRICS_USERNAME=custom_user
       - METRICS_PASSWORD=custom_password
