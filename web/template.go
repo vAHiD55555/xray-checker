@@ -20,18 +20,18 @@ func init() {
 }
 
 type PageData struct {
-	Version         string
-	Commit          string
-	Port            string
-	CheckInterval   int
-	IPCheckService  string
-	ResponseWithLatency bool
-	CheckMethod     string
-	GenMethodURL    string
-	IpCheckTimeout  int
-	RecheckSubscription bool
-	StartPort       int
-	Endpoints       []EndpointInfo
+	Version            string
+	Commit             string
+	Port               string
+	CheckInterval      int
+	IPCheckUrl         string
+	SimulateLatency    bool
+	CheckMethod        string
+	StatusCheckUrl     string
+	Timeout            int
+	SubscriptionUpdate bool
+	StartPort          int
+	Endpoints          []EndpointInfo
 }
 
 func RenderIndex(w io.Writer, data PageData) error {

@@ -103,27 +103,22 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 
 	client := &http.Client{
 		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURLParsed),
+			Proxy:             http.ProxyURL(proxyURLParsed),
 			DisableKeepAlives: true,
 		},
 		Timeout: time.Second * time.Duration(pc.ipCheckTimeout),
 	}
 
-	start := time.Now()
-
 	var checkSuccess bool
 	var checkErr error
 	var logMessage string
 
+	start := time.Now()
+
 	if pc.checkMethod == "ip" {
 		checkSuccess, logMessage, checkErr = pc.checkByIP(client)
-	} else if pc.checkMethod == "gen" {
-		checkSuccess, checkErr = pc.checkByGen(client)
-		if checkSuccess {
-			logMessage = "Status: 204"
-		} else {
-			logMessage = "Check failed"
-		}
+	} else if pc.checkMethod == "status" {
+		checkSuccess, logMessage, checkErr = pc.checkByGen(client)
 	} else {
 		log.Printf("Invalid check method: %s", pc.checkMethod)
 		return
@@ -181,14 +176,15 @@ func (pc *ProxyChecker) checkByIP(client *http.Client) (bool, string, error) {
 	return proxyIP != pc.currentIP, logMessage, nil
 }
 
-func (pc *ProxyChecker) checkByGen(client *http.Client) (bool, error) {
+func (pc *ProxyChecker) checkByGen(client *http.Client) (bool, string, error) {
 	resp, err := client.Get(pc.genMethodURL)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	defer resp.Body.Close()
 
-	return resp.StatusCode >= 200 && resp.StatusCode < 300, nil
+	logMessage := fmt.Sprintf("Status: %d", resp.StatusCode)
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, logMessage, nil
 }
 
 func (pc *ProxyChecker) ClearMetrics() {

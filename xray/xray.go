@@ -27,14 +27,14 @@ func generateConfig(proxies []*models.ProxyConfig, startPort int, xrayLogLevel s
 		XrayLogLevel: xrayLogLevel,
 	}
 
-    tmpl, err := template.New("xray.json.tmpl").
-        Funcs(template.FuncMap{
-            "add": func(a, b int) int { return a + b },
-        }).
-        ParseFS(templates, "templates/xray.json.tmpl")
-    if err != nil {
-        return nil, err
-    }
+	tmpl, err := template.New("xray.json.tmpl").
+		Funcs(template.FuncMap{
+			"add": func(a, b int) int { return a + b },
+		}).
+		ParseFS(templates, "templates/xray.json.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
@@ -83,7 +83,7 @@ func UpdateConfiguration(newConfigs []*models.ProxyConfig, currentConfigs *[]*mo
 	PrepareProxyConfigs(newConfigs)
 
 	configFile := "xray_config.json"
-	if err := GenerateAndSaveConfig(newConfigs, config.CLIConfig.StartPort, configFile, config.CLIConfig.XrayLogLevel); err != nil {
+	if err := GenerateAndSaveConfig(newConfigs, config.CLIConfig.Xray.StartPort, configFile, config.CLIConfig.Xray.LogLevel); err != nil {
 		return fmt.Errorf("error generating new Xray config: %v", err)
 	}
 
@@ -99,7 +99,7 @@ func UpdateConfiguration(newConfigs []*models.ProxyConfig, currentConfigs *[]*mo
 
 	*currentConfigs = newConfigs
 
-	web.RegisterConfigEndpoints(newConfigs, config.CLIConfig.StartPort)
+	web.RegisterConfigEndpoints(newConfigs, config.CLIConfig.Xray.StartPort)
 
 	log.Println("Configuration updated successfully")
 	return nil
