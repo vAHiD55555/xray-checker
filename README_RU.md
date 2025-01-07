@@ -39,26 +39,27 @@ Xray Checker - это инструмент для мониторинга дос�
 
 ## Конфигурация
 
-| Группа           | Переменная окружения       | Аргумент командной строки    | По умолчанию                            | Описание                                            |
-| ---------------- | -------------------------- | ---------------------------- | --------------------------------------- | --------------------------------------------------- |
+| Группа           | Переменная окружения           | Аргумент командной строки        | По умолчанию                            | Описание                                            |
+| ---------------- | ------------------------------ | -------------------------------- | --------------------------------------- | --------------------------------------------------- |
 | **Subscription** |
-|                  | `SUBSCRIPTION_URL`         | `--subscription-url`         | -                                       | URL подписки для получения конфигураций             |
-|                  | `AUTO_UPDATE_SUBSCRIPTION` | `--auto-update-subscription` | `true`                                  | Обновлять подписку при каждой проверке              |
+|                  | `SUBSCRIPTION_URL`             | `--subscription-url`             | -                                       | URL подписки для получения конфигураций             |
+|                  | `SUBSCRIPTION_UPDATE`          | `--subscription-update`          | `true`                                  | Обновлять подписку автоматически                    |
+|                  | `SUBSCRIPTION_UPDATE_INTERVAL` | `--subscription-update-interval` | `300`                                   | Интервал обновления подписки в секундах             |
 | **Proxy**        |
-|                  | `PROXY_CHECK_INTERVAL`     | `--proxy-check-interval`     | `300`                                   | Интервал проверки в секундах                        |
-|                  | `PROXY_CHECK_METHOD`       | `--proxy-check-method`       | `ip`                                    | Метод проверки (ip/status)                          |
-|                  | `PROXY_IP_CHECK_URL`       | `--proxy-ip-check-url`       | `https://api.ipify.org?format=text`     | URL сервиса проверки IP                             |
-|                  | `PROXY_STATUS_CHECK_URL`   | `--proxy-status-check-url`   | `http://cp.cloudflare.com/generate_204` | URL для проверки статуса                            |
-|                  | `PROXY_TIMEOUT`            | `--proxy-timeout`            | `30`                                    | Таймаут проверки в секундах                         |
-|                  | `SIMULATE_LATENCY`         | `--simulate-latency`         | `true`                                  | Добавлять задержку к ответу                         |
+|                  | `PROXY_CHECK_INTERVAL`         | `--proxy-check-interval`         | `300`                                   | Интервал проверки в секундах                        |
+|                  | `PROXY_CHECK_METHOD`           | `--proxy-check-method`           | `ip`                                    | Метод проверки (ip/status)                          |
+|                  | `PROXY_IP_CHECK_URL`           | `--proxy-ip-check-url`           | `https://api.ipify.org?format=text`     | URL сервиса проверки IP                             |
+|                  | `PROXY_STATUS_CHECK_URL`       | `--proxy-status-check-url`       | `http://cp.cloudflare.com/generate_204` | URL для проверки статуса                            |
+|                  | `PROXY_TIMEOUT`                | `--proxy-timeout`                | `30`                                    | Таймаут проверки в секундах                         |
+|                  | `SIMULATE_LATENCY`             | `--simulate-latency`             | `true`                                  | Добавлять задержку к ответу                         |
 | **Xray**         |
-|                  | `XRAY_START_PORT`          | `--xray-start-port`          | `10000`                                 | Начальный порт для конфигураций                     |
-|                  | `XRAY_LOG_LEVEL`           | `--xray-log-level`           | `none`                                  | Уровень логирования (debug/info/warning/error/none) |
+|                  | `XRAY_START_PORT`              | `--xray-start-port`              | `10000`                                 | Начальный порт для конфигураций                     |
+|                  | `XRAY_LOG_LEVEL`               | `--xray-log-level`               | `none`                                  | Уровень логирования (debug/info/warning/error/none) |
 | **Metrics**      |
-|                  | `METRICS_PORT`             | `--metrics-port`             | `2112`                                  | Порт для метрик                                     |
-|                  | `METRICS_PROTECTED`        | `--metrics-protected`        | `false`                                 | Защита метрик Basic Auth                            |
-|                  | `METRICS_USERNAME`         | `--metrics-username`         | `metricsUser`                           | Имя пользователя для Basic Auth                     |
-|                  | `METRICS_PASSWORD`         | `--metrics-password`         | `MetricsVeryHardPassword`               | Пароль для Basic Auth                               |
+|                  | `METRICS_PORT`                 | `--metrics-port`                 | `2112`                                  | Порт для метрик                                     |
+|                  | `METRICS_PROTECTED`            | `--metrics-protected`            | `false`                                 | Защита метрик Basic Auth                            |
+|                  | `METRICS_USERNAME`             | `--metrics-username`             | `metricsUser`                           | Имя пользователя для Basic Auth                     |
+|                  | `METRICS_PASSWORD`             | `--metrics-password`             | `MetricsVeryHardPassword`               | Пароль для Basic Auth                               |
 
 ### Формат подписки
 
