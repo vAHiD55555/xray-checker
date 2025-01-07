@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync/atomic"
 	"time"
 	"xray-checker/checker"
 	"xray-checker/config"
@@ -37,11 +38,14 @@ func main() {
 		log.Fatalf("Error starting Xray: %v", err)
 	}
 
+	var needsUpdate atomic.Bool
+
 	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.Xray.StartPort, config.CLIConfig.Proxy.IpCheckUrl, config.CLIConfig.Proxy.Timeout, config.CLIConfig.Proxy.StatusCheckUrl, config.CLIConfig.Proxy.CheckMethod)
 	s := gocron.NewScheduler(time.UTC)
 	s.Every(config.CLIConfig.Proxy.CheckInterval).Seconds().Do(func() {
 		log.Printf("Starting proxy check iteration...")
-		if config.CLIConfig.Subscription.Update {
+
+		if config.CLIConfig.Subscription.Update && needsUpdate.Swap(false) {
 			log.Printf("Updating subscription...")
 			newConfigs, err := parser.ParseSubscription(config.CLIConfig.Subscription.URL)
 			if err != nil {
@@ -55,6 +59,14 @@ func main() {
 		proxyChecker.CheckAllProxies()
 	})
 	s.StartAsync()
+
+	if config.CLIConfig.Subscription.Update {
+		updateScheduler := gocron.NewScheduler(time.UTC)
+		updateScheduler.Every(config.CLIConfig.Subscription.UpdateInterval).Seconds().Do(func() {
+			needsUpdate.Store(true)
+		})
+		updateScheduler.StartAsync()
+	}
 
 	mux := http.NewServeMux()
 
