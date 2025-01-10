@@ -21,7 +21,6 @@ func init() {
 
 type PageData struct {
 	Version            string
-	Commit             string
 	Port               string
 	CheckInterval      int
 	IPCheckUrl         string
@@ -31,6 +30,8 @@ type PageData struct {
 	Timeout            int
 	SubscriptionUpdate bool
 	StartPort          int
+	Instance           string
+	PushUrl            string
 	Endpoints          []EndpointInfo
 }
 
