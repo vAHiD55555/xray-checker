@@ -37,6 +37,7 @@ Xray Checker - это инструмент для мониторинга дос�
 - `protocol`: Тип протокола (vless/trojan/shadowsocks)
 - `address`: Адрес сервера и порт
 - `name`: Имя конфигурации прокси
+- `instance`: Опциональная метка instance (если указана через --metrics-instance)
 
 ## Конфигурация
 
@@ -61,6 +62,10 @@ Xray Checker - это инструмент для мониторинга дос�
 | `METRICS_PROTECTED`            | `--metrics-protected`            | `false`                                 | Защита метрик Basic Auth                            |
 | `METRICS_USERNAME`             | `--metrics-username`             | `metricsUser`                           | Имя пользователя для Basic Auth                     |
 | `METRICS_PASSWORD`             | `--metrics-password`             | `MetricsVeryHardPassword`               | Пароль для Basic Auth                               |
+| `METRICS_PUSH_URL`             | `--metrics-push-url`             | -                                       | URL Prometheus pushgateway                          |
+| `METRICS_INSTANCE`             | `--metrics-instance`             | -                                       | Метка instance для метрик                           |
+| **Другое**                     |
+| `RUN_ONCE`                     | `--run-once`                     | `false`                                 | Выполнение одиного цикла проверки и выход           |
 
 ### Формат подписки
 
@@ -80,56 +85,105 @@ User-Agent: Xray-Checker
 ### CLI
 
 ```bash
-# Базовое использование
+# Минимально необходимая конфигурация
 ./xray-checker --subscription-url="https://your-subscription-url/sub"
 ```
 
 ```bash
-# Расширенное использование с пользовательскими настройками
+# Использование всех доступных параметров
 ./xray-checker \
- --subscription-url="https://your-subscription-url/sub" \
- --proxy-check-interval=300 \
- --proxy-timeout=5 \
- --proxy-check-method=ip \
- --proxy-ip-check-url="https://api.ipify.org?format=text" \
- --proxy-status-check-url="http://cp.cloudflare.com/generate_204" \
- --simulate-latency=true \
- --xray-start-port=10000 \
- --xray-log-level=none \
- --metrics-port=2112 \
- --metrics-protected=true \
- --metrics-username=custom_user \
- --metrics-password=custom_pass
+  --subscription-url="https://your-subscription-url/sub" \
+  --subscription-update=true \
+  --subscription-update-interval=300 \
+  --proxy-check-interval=300 \
+  --proxy-timeout=5 \
+  --proxy-check-method=ip \
+  --proxy-ip-check-url="https://api.ipify.org?format=text" \
+  --proxy-status-check-url="http://cp.cloudflare.com/generate_204" \
+  --simulate-latency=true \
+  --xray-start-port=10000 \
+  --xray-log-level=none \
+  --metrics-port=2112 \
+  --metrics-protected=true \
+  --metrics-username=custom_user \
+  --metrics-password=custom_pass \
+  --metrics-instance=node-1 \
+  --metrics-push-url="https://push.example.com" \
+  --run-once=false
 ```
 
 ### Docker
 
 ```bash
+# Минимально необходимая конфигурация
 docker run -d \
   -e SUBSCRIPTION_URL=https://your-subscription-url/sub \
+  -p 2112:2112 \
+  kutovoys/xray-checker
+```
+
+```bash
+# Использование всех доступных параметров
+docker run -d \
+  -e SUBSCRIPTION_URL=https://your-subscription-url/sub \
+  -e SUBSCRIPTION_UPDATE=true \
+  -e SUBSCRIPTION_UPDATE_INTERVAL=300 \
   -e PROXY_CHECK_INTERVAL=300 \
   -e PROXY_CHECK_METHOD=ip \
   -e PROXY_TIMEOUT=30 \
+  -e PROXY_IP_CHECK_URL=https://api.ipify.org?format=text \
+  -e PROXY_STATUS_CHECK_URL=http://cp.cloudflare.com/generate_204 \
+  -e SIMULATE_LATENCY=true \
   -e XRAY_START_PORT=10000 \
+  -e XRAY_LOG_LEVEL=none \
   -e METRICS_PORT=2112 \
+  -e METRICS_PROTECTED=true \
+  -e METRICS_USERNAME=custom_user \
+  -e METRICS_PASSWORD=custom_pass \
+  -e METRICS_INSTANCE=node-1 \
+  -e METRICS_PUSH_URL=https://push.example.com \
+  -e RUN_ONCE=false \
+  -p 2112:2112 \
   kutovoys/xray-checker
 ```
 
 ### Docker Compose
 
 ```yaml
+# Минимальная конфигурация
 services:
   xray-checker:
     image: kutovoys/xray-checker
     environment:
       - SUBSCRIPTION_URL=https://your-subscription-url/sub
+    ports:
+      - "2112:2112"
+```
+
+```yaml
+# Полная конфигурация со всеми доступными параметрами
+services:
+  xray-checker:
+    image: kutovoys/xray-checker
+    environment:
+      - SUBSCRIPTION_URL=https://your-subscription-url/sub
+      - SUBSCRIPTION_UPDATE=true
+      - SUBSCRIPTION_UPDATE_INTERVAL=300
       - PROXY_CHECK_INTERVAL=300
       - PROXY_CHECK_METHOD=ip
       - PROXY_TIMEOUT=30
+      - PROXY_IP_CHECK_URL=https://api.ipify.org?format=text
+      - PROXY_STATUS_CHECK_URL=http://cp.cloudflare.com/generate_204
+      - SIMULATE_LATENCY=true
       - XRAY_START_PORT=10000
+      - XRAY_LOG_LEVEL=none
+      - METRICS_PORT=2112
       - METRICS_PROTECTED=true
       - METRICS_USERNAME=custom_user
-      - METRICS_PASSWORD=custom_password
+      - METRICS_PASSWORD=custom_pass
+      - METRICS_INSTANCE=node-1
+      - METRICS_PUSH_URL=https://push.example.com
+      - RUN_ONCE=false
     ports:
       - "2112:2112"
 ```

@@ -20,11 +20,10 @@ import (
 
 var (
 	version = "unknown"
-	commit  = "unknown"
 )
 
 func main() {
-	config.Parse(version, commit)
+	config.Parse(version)
 	log.Printf("Xray Checker %s starting...\n", version)
 
 	configFile := "xray_config.json"
@@ -38,13 +37,54 @@ func main() {
 		log.Fatalf("Error starting Xray: %v", err)
 	}
 
-	var needsUpdate atomic.Bool
+	defer func() {
+		if err := xrayRunner.Stop(); err != nil {
+			log.Printf("Error stopping Xray: %v", err)
+		}
+	}()
 
-	proxyChecker := checker.NewProxyChecker(*proxyConfigs, config.CLIConfig.Xray.StartPort, config.CLIConfig.Proxy.IpCheckUrl, config.CLIConfig.Proxy.Timeout, config.CLIConfig.Proxy.StatusCheckUrl, config.CLIConfig.Proxy.CheckMethod)
+	metrics.InitMetrics(config.CLIConfig.Metrics.Instance)
+
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(metrics.GetProxyStatusMetric())
+	registry.MustRegister(metrics.GetProxyLatencyMetric())
+
+	proxyChecker := checker.NewProxyChecker(
+		*proxyConfigs,
+		config.CLIConfig.Xray.StartPort,
+		config.CLIConfig.Proxy.IpCheckUrl,
+		config.CLIConfig.Proxy.Timeout,
+		config.CLIConfig.Proxy.StatusCheckUrl,
+		config.CLIConfig.Proxy.CheckMethod,
+		config.CLIConfig.Metrics.Instance,
+	)
+
+	runCheckIteration := func() {
+		log.Printf("Starting proxy check iteration...")
+		proxyChecker.CheckAllProxies()
+
+		pushConfig, err := metrics.ParseURL(config.CLIConfig.Metrics.PushURL)
+		if err != nil {
+			log.Printf("Error parsing push URL: %v", err)
+			return
+		}
+
+		if pushConfig != nil {
+			if err := metrics.PushMetrics(pushConfig, registry); err != nil {
+				log.Printf("Error pushing metrics: %v", err)
+			}
+		}
+	}
+
+	if config.CLIConfig.RunOnce {
+		runCheckIteration()
+		log.Println("Single check iteration completed, exiting...")
+		return
+	}
+
+	var needsUpdate atomic.Bool
 	s := gocron.NewScheduler(time.UTC)
 	s.Every(config.CLIConfig.Proxy.CheckInterval).Seconds().Do(func() {
-		log.Printf("Starting proxy check iteration...")
-
 		if config.CLIConfig.Subscription.Update && needsUpdate.Swap(false) {
 			log.Printf("Updating subscription...")
 			newConfigs, err := parser.ParseSubscription(config.CLIConfig.Subscription.URL)
@@ -56,7 +96,7 @@ func main() {
 				}
 			}
 		}
-		proxyChecker.CheckAllProxies()
+		runCheckIteration()
 	})
 	s.StartAsync()
 
@@ -69,15 +109,10 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-
 	mux.Handle("/health", web.HealthHandler())
 
 	protectedHandler := http.NewServeMux()
-	protectedHandler.Handle("/", web.IndexHandler(version, commit))
-
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(metrics.GetProxyStatusMetric())
-	registry.MustRegister(metrics.GetProxyLatencyMetric())
+	protectedHandler.Handle("/", web.IndexHandler(version))
 	protectedHandler.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	web.RegisterConfigEndpoints(*proxyConfigs, config.CLIConfig.Xray.StartPort)
@@ -92,8 +127,10 @@ func main() {
 		mux.Handle("/", protectedHandler)
 	}
 
-	log.Printf("Starting server on :%s", config.CLIConfig.Metrics.Port)
-	if err := http.ListenAndServe(":"+config.CLIConfig.Metrics.Port, mux); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+	if !config.CLIConfig.RunOnce {
+		log.Printf("Starting server on :%s", config.CLIConfig.Metrics.Port)
+		if err := http.ListenAndServe(":"+config.CLIConfig.Metrics.Port, mux); err != nil {
+			log.Fatalf("Error starting server: %v", err)
+		}
 	}
 }

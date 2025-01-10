@@ -8,13 +8,12 @@ import (
 
 var CLIConfig CLI
 
-func Parse(version, commit string) {
+func Parse(version string) {
 	ctx := kong.Parse(&CLIConfig,
 		kong.Name("xray-checker"),
 		kong.Description("Xray Checker: A Prometheus exporter for monitoring Xray proxies"),
 		kong.Vars{
 			"version": version,
-			"commit":  commit,
 		},
 	)
 	_ = ctx
@@ -46,9 +45,12 @@ type CLI struct {
 		Protected bool   `name:"metrics-protected" help:"Whether metrics are protected by basic auth" default:"false" env:"METRICS_PROTECTED"`
 		Username  string `name:"metrics-username" help:"Username for metrics if protected by basic auth" default:"metricsUser" env:"METRICS_USERNAME"`
 		Password  string `name:"metrics-password" help:"Password for metrics if protected by basic auth" default:"MetricsVeryHardPassword" env:"METRICS_PASSWORD"`
+		Instance  string `name:"metrics-instance" help:"Instance label for metrics" default:"" env:"METRICS_INSTANCE"`
+		PushURL   string `name:"metrics-push-url" help:"Prometheus pushgateway URL (e.g. https://user:pass@host:port)" default:"" env:"METRICS_PUSH_URL"`
 	} `embed:"" prefix:""`
 
 	Version VersionFlag `name:"version" help:"Print version information and quit"`
+	RunOnce bool        `name:"run-once" help:"Run one check cycle and exit" default:"false" env:"RUN_ONCE"`
 }
 
 type VersionFlag string
@@ -58,7 +60,6 @@ func (v VersionFlag) IsBool() bool                         { return true }
 func (v VersionFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
 	fmt.Println("Xray Checker: A Prometheus exporter for monitoring Xray proxies")
 	fmt.Printf("Version:\t %s\n", vars["version"])
-	fmt.Printf("Commit:\t %s\n", vars["commit"])
 	fmt.Printf("GitHub: https://github.com/kutovoys/xray-checker\n")
 	app.Exit(0)
 	return nil

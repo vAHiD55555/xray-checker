@@ -6,6 +6,7 @@ import (
 	"time"
 	"xray-checker/checker"
 	"xray-checker/config"
+	"xray-checker/metrics"
 	"xray-checker/models"
 )
 
@@ -17,7 +18,7 @@ type EndpointInfo struct {
 	ProxyPort int
 }
 
-func IndexHandler(version, commit string) http.HandlerFunc {
+func IndexHandler(version string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
@@ -26,7 +27,6 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 
 		data := PageData{
 			Version:            version,
-			Commit:             commit,
 			Port:               config.CLIConfig.Metrics.Port,
 			CheckInterval:      config.CLIConfig.Proxy.CheckInterval,
 			IPCheckUrl:         config.CLIConfig.Proxy.IpCheckUrl,
@@ -36,6 +36,8 @@ func IndexHandler(version, commit string) http.HandlerFunc {
 			Timeout:            config.CLIConfig.Proxy.Timeout,
 			SubscriptionUpdate: config.CLIConfig.Subscription.Update,
 			StartPort:          config.CLIConfig.Xray.StartPort,
+			Instance:           config.CLIConfig.Metrics.Instance,
+			PushUrl:            metrics.GetPushURL(config.CLIConfig.Metrics.PushURL),
 			Endpoints:          registeredEndpoints,
 		}
 

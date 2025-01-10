@@ -26,9 +26,10 @@ type ProxyChecker struct {
 	ipCheckTimeout int
 	genMethodURL   string
 	checkMethod    string
+	instance       string
 }
 
-func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int, genMethodURL string, checkMethod string) *ProxyChecker {
+func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL string, ipCheckTimeout int, genMethodURL string, checkMethod string, instance string) *ProxyChecker {
 	return &ProxyChecker{
 		proxies:   proxies,
 		startPort: startPort,
@@ -39,6 +40,7 @@ func NewProxyChecker(proxies []*models.ProxyConfig, startPort int, ipCheckURL st
 		ipCheckTimeout: ipCheckTimeout,
 		genMethodURL:   genMethodURL,
 		checkMethod:    checkMethod,
+		instance:       instance,
 	}
 }
 
@@ -77,6 +79,7 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
 			0,
+			pc.instance,
 		)
 		pc.currentMetrics.Store(metricKey, false)
 	}
@@ -87,6 +90,7 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
 			time.Duration(0),
+			pc.instance,
 		)
 		pc.latencyMetrics.Store(metricKey, time.Duration(0))
 	}
@@ -138,7 +142,6 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 		log.Printf("%s | Failed | %s | Latency: %s", proxy.Name, logMessage, latency)
 		setFailedStatus()
 		setFailedLatency()
-
 	} else {
 		log.Printf("%s | Success | %s | Latency: %s", proxy.Name, logMessage, latency)
 		metrics.RecordProxyStatus(
@@ -146,12 +149,14 @@ func (pc *ProxyChecker) CheckProxy(proxy *models.ProxyConfig) {
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
 			1,
+			pc.instance,
 		)
 		metrics.RecordProxyLatency(
 			proxy.Protocol,
 			fmt.Sprintf("%s:%d", proxy.Server, proxy.Port),
 			proxy.Name,
 			latency,
+			pc.instance,
 		)
 
 		pc.latencyMetrics.Store(metricKey, latency)
@@ -192,8 +197,8 @@ func (pc *ProxyChecker) ClearMetrics() {
 		metricKey := key.(string)
 		parts := strings.Split(metricKey, "|")
 		if len(parts) == 3 {
-			metrics.DeleteProxyStatus(parts[0], parts[1], parts[2])
-			metrics.DeleteProxyLatency(parts[0], parts[1], parts[2])
+			metrics.DeleteProxyStatus(parts[0], parts[1], parts[2], pc.instance)
+			metrics.DeleteProxyLatency(parts[0], parts[1], parts[2], pc.instance)
 		}
 		pc.currentMetrics.Delete(key)
 		return true
