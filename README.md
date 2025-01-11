@@ -10,7 +10,7 @@
 Xray Checker is a tool for monitoring proxy server availability, supporting VLESS, Trojan, and Shadowsocks protocols. It automatically tests connections through Xray Core and provides metrics for Prometheus, as well as API endpoints for integration with monitoring systems.
 
 <div align="center">
-  <img src="images/xray-checker.png" alt="Dashboard Screenshot">
+  <img src=".github/screen/xray-checker.png" alt="Dashboard Screenshot">
 </div>
 
 ## Features
@@ -187,6 +187,25 @@ services:
     ports:
       - "2112:2112"
 ```
+
+### GitHub Actions
+
+You can run Xray Checker using GitHub Actions. This approach is useful when you need to run checks from different locations or don't have your own server.
+
+1. Fork the [xray-checker-in-actions](https://github.com/kutovoys/xray-checker-in-actions) repository
+2. Configure the following secrets in your forked repository:
+   - `SUBSCRIPTION_URL`: Your subscription URL
+   - `PUSH_URL`: Prometheus pushgateway URL for metrics collection
+   - `INSTANCE`: (Optional) Instance name for metrics identification
+
+The Action will:
+
+- Run every 5 minutes
+- Use the latest version of Xray Checker
+- Push metrics to your Prometheus pushgateway
+- Run with `--run-once` flag to ensure clean execution
+
+This method requires a properly configured Prometheus pushgateway as it can't expose metrics directly. The metrics will be pushed to your specified `PUSH_URL` with the instance label from your configuration.
 
 ### Prometheus Configuration
 
