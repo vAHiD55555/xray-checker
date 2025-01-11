@@ -63,15 +63,17 @@ func main() {
 		log.Printf("Starting proxy check iteration...")
 		proxyChecker.CheckAllProxies()
 
-		pushConfig, err := metrics.ParseURL(config.CLIConfig.Metrics.PushURL)
-		if err != nil {
-			log.Printf("Error parsing push URL: %v", err)
-			return
-		}
+		if config.CLIConfig.Metrics.PushURL != "" {
+			pushConfig, err := metrics.ParseURL(config.CLIConfig.Metrics.PushURL)
+			if err != nil {
+				log.Printf("Error parsing push URL: %v", err)
+				return
+			}
 
-		if pushConfig != nil {
-			if err := metrics.PushMetrics(pushConfig, registry); err != nil {
-				log.Printf("Error pushing metrics: %v", err)
+			if pushConfig != nil {
+				if err := metrics.PushMetrics(pushConfig, registry); err != nil {
+					log.Printf("Error pushing metrics: %v", err)
+				}
 			}
 		}
 	}

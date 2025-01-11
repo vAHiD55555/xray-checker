@@ -92,7 +92,7 @@ func DeleteProxyLatency(protocol, address, name string, instance string) {
 
 func ParseURL(remoteWriteURL string) (*RemoteWriteConfig, error) {
 	if remoteWriteURL == "" {
-		return nil, fmt.Errorf("remote write URL is empty")
+		return nil, nil
 	}
 
 	u, err := url.Parse(remoteWriteURL)
@@ -166,9 +166,14 @@ func PushMetrics(config *RemoteWriteConfig, registry *prometheus.Registry) error
 }
 
 func GetPushURL(url string) string {
-	cfg, err := ParseURL(url)
-	if err != nil {
+	if url == "" {
 		return ""
 	}
+
+	cfg, err := ParseURL(url)
+	if err != nil || cfg == nil {
+		return ""
+	}
+
 	return cfg.URL
 }

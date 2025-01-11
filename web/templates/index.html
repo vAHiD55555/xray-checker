@@ -168,20 +168,26 @@
     <div class="info-box">
       <strong>Version:</strong> {{.Version}}<br />
       <strong>Server Port:</strong> {{.Port}}<br />
+      {{if .Instance}}
       <strong>Instance:</strong> {{.Instance}}<br />
-      <strong>Push URL:</strong>
+      {{end}} {{if .PushUrl}}<strong>Push URL:</strong>
       <a href="{{.PushUrl}}" target="_blank">{{.PushUrl}}</a><br />
+      {{end}}
       <strong>Check Interval:</strong> {{.CheckInterval}} seconds<br />
-      <strong>IP Check Url:</strong>
+      <strong>Check Method:</strong> {{.CheckMethod}}<br />
+      {{if eq .CheckMethod "ip"}}<strong>IP Check Url:</strong>
       <a href="{{.IPCheckUrl}}" target="_blank">{{.IPCheckUrl}}</a><br />
+      {{end}} {{if eq .CheckMethod "status"}}
       <strong>Status Check Url:</strong>
       <a href="{{.StatusCheckUrl}}" target="_blank">{{.StatusCheckUrl}}</a
       ><br />
+      {{end}}
       <br />
-      <strong>Check Method:</strong> {{.CheckMethod}}<br />
+      <strong>Update Subscription:</strong> {{.SubscriptionUpdate}}<br />
+      <strong>Subscription update Interval:</strong>
+      {{.SubscriptionUpdateInterval}} seconds<br />
       <strong>Simulate Latency on Endpoint:</strong> {{.SimulateLatency}}<br />
       <strong>IP Check Timeout:</strong> {{.Timeout}} seconds<br />
-      <strong>Update Subscription:</strong> {{.SubscriptionUpdate}}<br />
     </div>
 
     <div class="info-box">

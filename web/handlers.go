@@ -26,19 +26,20 @@ func IndexHandler(version string) http.HandlerFunc {
 		}
 
 		data := PageData{
-			Version:            version,
-			Port:               config.CLIConfig.Metrics.Port,
-			CheckInterval:      config.CLIConfig.Proxy.CheckInterval,
-			IPCheckUrl:         config.CLIConfig.Proxy.IpCheckUrl,
-			CheckMethod:        config.CLIConfig.Proxy.CheckMethod,
-			StatusCheckUrl:     config.CLIConfig.Proxy.StatusCheckUrl,
-			SimulateLatency:    config.CLIConfig.Proxy.SimulateLatency,
-			Timeout:            config.CLIConfig.Proxy.Timeout,
-			SubscriptionUpdate: config.CLIConfig.Subscription.Update,
-			StartPort:          config.CLIConfig.Xray.StartPort,
-			Instance:           config.CLIConfig.Metrics.Instance,
-			PushUrl:            metrics.GetPushURL(config.CLIConfig.Metrics.PushURL),
-			Endpoints:          registeredEndpoints,
+			Version:                    version,
+			Port:                       config.CLIConfig.Metrics.Port,
+			CheckInterval:              config.CLIConfig.Proxy.CheckInterval,
+			IPCheckUrl:                 config.CLIConfig.Proxy.IpCheckUrl,
+			CheckMethod:                config.CLIConfig.Proxy.CheckMethod,
+			StatusCheckUrl:             config.CLIConfig.Proxy.StatusCheckUrl,
+			SimulateLatency:            config.CLIConfig.Proxy.SimulateLatency,
+			Timeout:                    config.CLIConfig.Proxy.Timeout,
+			SubscriptionUpdate:         config.CLIConfig.Subscription.Update,
+			SubscriptionUpdateInterval: config.CLIConfig.Subscription.UpdateInterval,
+			StartPort:                  config.CLIConfig.Xray.StartPort,
+			Instance:                   config.CLIConfig.Metrics.Instance,
+			PushUrl:                    metrics.GetPushURL(config.CLIConfig.Metrics.PushURL),
+			Endpoints:                  registeredEndpoints,
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -80,7 +81,7 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 
 		var found *models.ProxyConfig
 		for _, proxy := range proxyChecker.GetProxies() {
-			proxyPath := fmt.Sprintf("%s-%s-%d", proxy.Protocol, proxy.Server, proxy.Port)
+			proxyPath := fmt.Sprintf("%d-%s-%s-%d", proxy.Index, proxy.Protocol, proxy.Server, proxy.Port)
 			if proxyPath == path {
 				found = proxy
 				break
@@ -115,13 +116,18 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 func RegisterConfigEndpoints(proxies []*models.ProxyConfig, startPort int) {
 	registeredEndpoints = make([]EndpointInfo, 0, len(proxies))
 
-	for i, proxy := range proxies {
-		endpoint := fmt.Sprintf("/config/%s-%s-%d", proxy.Protocol, proxy.Server, proxy.Port)
+	for _, proxy := range proxies {
+		endpoint := fmt.Sprintf("/config/%d-%s-%s-%d",
+			proxy.Index,
+			proxy.Protocol,
+			proxy.Server,
+			proxy.Port,
+		)
 
 		registeredEndpoints = append(registeredEndpoints, EndpointInfo{
 			Name:      fmt.Sprintf("%s (%s:%d)", proxy.Name, proxy.Server, proxy.Port),
 			URL:       endpoint,
-			ProxyPort: startPort + i,
+			ProxyPort: startPort + proxy.Index,
 		})
 	}
 }
