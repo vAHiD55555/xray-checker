@@ -60,11 +60,21 @@ func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse config: %v", err)
 		}
-		return links, nil
+		return filterEmptyLinks(links), nil
 	}
 
 	links := strings.Split(string(decoded), "\n")
-	return links, nil
+	return filterEmptyLinks(links), nil
+}
+
+func filterEmptyLinks(links []string) []string {
+	var filtered []string
+	for _, link := range links {
+		if strings.TrimSpace(link) != "" {
+			filtered = append(filtered, link)
+		}
+	}
+	return filtered
 }
 
 func ParseProxyURL(proxyURL string) (*models.ProxyConfig, error) {
@@ -103,7 +113,7 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
 	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
 	}
 
 	query := u.Query()
@@ -137,7 +147,7 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
 	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
 	}
 
 	query := u.Query()
@@ -178,7 +188,7 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config.Server = hostParts[0]
 	fmt.Sscanf(hostParts[1], "%d", &config.Port)
 	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("Skipping port: %d", config.Port)
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
 	}
 
 	return config, nil
