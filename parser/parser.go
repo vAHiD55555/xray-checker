@@ -139,23 +139,19 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 
 	query := u.Query()
 
-	// Basic settings
 	config.Security = query.Get("security")
 	config.Type = query.Get("type")
 	config.Flow = query.Get("flow")
 
-	// Transport settings
 	config.HeaderType = query.Get("headerType")
 	config.Path = query.Get("path")
 	config.Host = query.Get("host")
 
-	// TLS/Reality settings
 	config.SNI = query.Get("sni")
 	config.Fingerprint = query.Get("fp")
 	config.PublicKey = query.Get("pbk")
 	config.ShortID = query.Get("sid")
 
-	// gRPC settings
 	if config.Type == "grpc" {
 		config.ServiceName = query.Get("serviceName")
 		config.MultiMode = query.Get("multiMode") == "true"
@@ -171,20 +167,17 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
-	// Additional TLS settings
 	config.AllowInsecure = query.Get("allowInsecure") == "true"
 	if alpn := query.Get("alpn"); alpn != "" {
 		config.ALPN = strings.Split(alpn, ",")
 	}
 
-	// User level
 	if level := query.Get("level"); level != "" {
 		if l, err := strconv.Atoi(level); err == nil {
 			config.Level = l
 		}
 	}
 
-	// Store additional settings
 	for k, v := range query {
 		if len(v) > 0 {
 			config.Settings[k] = v[0]
@@ -199,7 +192,6 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 }
 
 func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
-	// Remove vmess:// prefix and decode base64
 	vmessStr := strings.TrimPrefix(u.String(), "vmess://")
 	decoded, err := base64.StdEncoding.DecodeString(vmessStr)
 	if err != nil {
@@ -209,7 +201,6 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
-	// Parse JSON
 	var vmessConfig map[string]interface{}
 	if err := json.Unmarshal(decoded, &vmessConfig); err != nil {
 		return nil, fmt.Errorf("error parsing VMess config: %v", err)
@@ -220,7 +211,6 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		Settings: make(map[string]string),
 	}
 
-	// Basic settings
 	if ps, ok := vmessConfig["ps"].(string); ok {
 		config.Name = ps
 	}
@@ -246,7 +236,6 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		config.Path = path
 	}
 
-	// TLS settings
 	if tls, ok := vmessConfig["tls"].(string); ok && tls == "tls" {
 		config.Security = "tls"
 		if sni, ok := vmessConfig["sni"].(string); ok {
@@ -262,7 +251,6 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
-	// gRPC settings
 	if config.Type == "grpc" {
 		if svcName, ok := vmessConfig["serviceName"].(string); ok {
 			config.ServiceName = svcName
@@ -278,12 +266,10 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
-	// Security level
 	if level, ok := vmessConfig["level"].(float64); ok {
 		config.Level = int(level)
 	}
 
-	// Store all string values as settings
 	for k, v := range vmessConfig {
 		if str, ok := v.(string); ok {
 			config.Settings[k] = str
@@ -318,16 +304,13 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 
 	query := u.Query()
 
-	// Basic settings
 	config.Security = query.Get("security")
 	config.Type = query.Get("type")
 	config.Flow = query.Get("flow")
 
-	// Transport settings
 	config.Path = query.Get("path")
 	config.Host = query.Get("host")
 
-	// TLS settings
 	config.SNI = query.Get("sni")
 	config.Fingerprint = query.Get("fp")
 	config.AllowInsecure = query.Get("allowInsecure") == "true"
@@ -335,7 +318,6 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 		config.ALPN = strings.Split(alpn, ",")
 	}
 
-	// gRPC settings
 	if config.Type == "grpc" {
 		config.ServiceName = query.Get("serviceName")
 		config.MultiMode = query.Get("multiMode") == "true"
@@ -351,7 +333,6 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
-	// Store additional settings
 	for k, v := range query {
 		if len(v) > 0 {
 			config.Settings[k] = v[0]

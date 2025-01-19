@@ -54,7 +54,6 @@ func generateConfig(proxies []*models.ProxyConfig, startPort int, xrayLogLevel s
 		return nil, fmt.Errorf("error executing template: %v", err)
 	}
 
-	// Validate the generated JSON
 	var jsonCheck interface{}
 	if err := json.Unmarshal(buf.Bytes(), &jsonCheck); err != nil {
 		log.Printf("Generated invalid JSON: %s", buf.String())
