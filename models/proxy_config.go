@@ -3,34 +3,34 @@ package models
 import "fmt"
 
 type ProxyConfig struct {
-	Protocol      string            // vless, vmess, trojan, shadowsocks
-	Server        string            // server address
-	Port          int               // server port
-	Name          string            // display name
-	Security      string            // tls, reality, none
-	Type          string            // tcp, ws, grpc, quic
-	UUID          string            // for vless/vmess
-	Flow          string            // for vless
-	HeaderType    string            // http, none
-	Path          string            // for websocket/grpc
-	Host          string            // for websocket
-	SNI           string            // for tls/reality
-	Fingerprint   string            // for tls/reality
-	PublicKey     string            // for reality
-	ShortID       string            // for reality
-	Password      string            // for trojan/shadowsocks
-	Method        string            // for shadowsocks
-	Level         int               // user level
-	AlterId       int               // for vmess
-	VMessAid      int               // alternative to AlterId for vmess
-	MultiMode     bool              // for grpc
-	ServiceName   string            // for grpc
-	IdleTimeout   int               // for grpc
-	WindowsSize   int               // for grpc
-	AllowInsecure bool              // for tls
-	ALPN          []string          // for tls
-	Index         int               // internal index for port allocation
-	Settings      map[string]string // additional settings
+	Protocol      string
+	Server        string
+	Port          int
+	Name          string
+	Security      string
+	Type          string
+	UUID          string
+	Flow          string
+	HeaderType    string
+	Path          string
+	Host          string
+	SNI           string
+	Fingerprint   string
+	PublicKey     string
+	ShortID       string
+	Password      string
+	Method        string
+	Level         int
+	AlterId       int
+	VMessAid      int
+	MultiMode     bool
+	ServiceName   string
+	IdleTimeout   int
+	WindowsSize   int
+	AllowInsecure bool
+	ALPN          []string
+	Index         int
+	Settings      map[string]string
 }
 
 func (pc *ProxyConfig) Validate() error {
@@ -44,7 +44,6 @@ func (pc *ProxyConfig) Validate() error {
 		return fmt.Errorf("invalid port number: %d", pc.Port)
 	}
 
-	// Protocol-specific validation
 	switch pc.Protocol {
 	case "vless", "vmess":
 		if pc.UUID == "" {
@@ -65,12 +64,10 @@ func (pc *ProxyConfig) Validate() error {
 	return nil
 }
 
-// GetEndpointPath returns the unique identifier for this proxy
 func (pc *ProxyConfig) GetEndpointPath() string {
 	return fmt.Sprintf("%s-%s-%d", pc.Protocol, pc.Server, pc.Port)
 }
 
-// GetTransportType returns the effective transport type
 func (pc *ProxyConfig) GetTransportType() string {
 	if pc.Type == "" {
 		return "tcp"
@@ -78,7 +75,6 @@ func (pc *ProxyConfig) GetTransportType() string {
 	return pc.Type
 }
 
-// GetSecurityType returns the effective security type
 func (pc *ProxyConfig) GetSecurityType() string {
 	if pc.Security == "" {
 		return "none"
@@ -86,7 +82,6 @@ func (pc *ProxyConfig) GetSecurityType() string {
 	return pc.Security
 }
 
-// GetAlterId returns the effective alterId for VMess
 func (pc *ProxyConfig) GetAlterId() int {
 	if pc.AlterId == 0 {
 		return pc.VMessAid
@@ -94,7 +89,6 @@ func (pc *ProxyConfig) GetAlterId() int {
 	return pc.AlterId
 }
 
-// GetVMessSecurity returns the VMess security method
 func (pc *ProxyConfig) GetVMessSecurity() string {
 	if pc.Security == "" {
 		return "auto"
@@ -102,7 +96,6 @@ func (pc *ProxyConfig) GetVMessSecurity() string {
 	return pc.Security
 }
 
-// GetUserLevel returns the user level
 func (pc *ProxyConfig) GetUserLevel() int {
 	if pc.Level == 0 {
 		return 0
@@ -110,12 +103,10 @@ func (pc *ProxyConfig) GetUserLevel() int {
 	return pc.Level
 }
 
-// HasGRPCSettings returns true if gRPC settings are configured
 func (pc *ProxyConfig) HasGRPCSettings() bool {
 	return pc.Type == "grpc" && pc.ServiceName != ""
 }
 
-// GetServiceName returns the gRPC service name or default value
 func (pc *ProxyConfig) GetServiceName() string {
 	if pc.ServiceName == "" {
 		return "GunService"
@@ -123,7 +114,6 @@ func (pc *ProxyConfig) GetServiceName() string {
 	return pc.ServiceName
 }
 
-// GetALPNSettings returns the ALPN settings or default values
 func (pc *ProxyConfig) GetALPNSettings() []string {
 	if len(pc.ALPN) == 0 {
 		return []string{"h2", "http/1.1"}
