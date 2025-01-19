@@ -2,11 +2,13 @@ package parser
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"xray-checker/config"
 	"xray-checker/models"
@@ -56,11 +58,19 @@ func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(string(body))
 	if err != nil {
 		links := strings.Split(string(body), "\n")
-		_, err = ParseProxyURL(links[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse config: %v", err)
+		var validLinks []string
+		for _, link := range links {
+			if link = strings.TrimSpace(link); link == "" {
+				continue
+			}
+			if _, err := url.Parse(link); err == nil {
+				validLinks = append(validLinks, link)
+			}
 		}
-		return filterEmptyLinks(links), nil
+		if len(validLinks) == 0 {
+			return nil, fmt.Errorf("no valid links found in subscription")
+		}
+		return validLinks, nil
 	}
 
 	links := strings.Split(string(decoded), "\n")
@@ -70,31 +80,41 @@ func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
 func filterEmptyLinks(links []string) []string {
 	var filtered []string
 	for _, link := range links {
-		if strings.TrimSpace(link) != "" {
-			filtered = append(filtered, link)
+		if link = strings.TrimSpace(link); link != "" {
+			if _, err := url.Parse(link); err == nil {
+				filtered = append(filtered, link)
+			}
 		}
 	}
 	return filtered
 }
 
 func ParseProxyURL(proxyURL string) (*models.ProxyConfig, error) {
+	proxyURL = strings.TrimSpace(proxyURL)
+	if proxyURL == "" {
+		return nil, fmt.Errorf("empty proxy URL")
+	}
+
 	u, err := url.Parse(proxyURL)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing proxy URL: %v", err)
 	}
 
-	config := &models.ProxyConfig{}
-	config.Protocol = u.Scheme
+	if u.Scheme == "" {
+		return nil, fmt.Errorf("protocol is missing in URL: %s", proxyURL)
+	}
 
-	switch config.Protocol {
+	switch u.Scheme {
 	case "vless":
 		return ParseVLESSConfig(u)
+	case "vmess":
+		return ParseVMessConfig(u)
 	case "trojan":
 		return ParseTrojanConfig(u)
 	case "ss":
 		return ParseShadowsocksConfig(u)
 	default:
-		return nil, fmt.Errorf("unsupported protocol: %s", config.Protocol)
+		return nil, fmt.Errorf("unsupported protocol: %s", u.Scheme)
 	}
 }
 
@@ -102,6 +122,7 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config := &models.ProxyConfig{
 		Protocol: "vless",
 		Name:     strings.TrimPrefix(u.Fragment, ""),
+		Settings: make(map[string]string),
 	}
 
 	config.UUID = u.User.Username()
@@ -110,24 +131,168 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	if len(hostParts) != 2 {
 		return nil, fmt.Errorf("invalid server address format: %s", u.Host)
 	}
+
 	config.Server = hostParts[0]
-	fmt.Sscanf(hostParts[1], "%d", &config.Port)
-	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("skipping port: %d", config.Port)
+	if _, err := fmt.Sscanf(hostParts[1], "%d", &config.Port); err != nil {
+		return nil, fmt.Errorf("invalid port number: %v", err)
 	}
 
 	query := u.Query()
 
+	// Basic settings
 	config.Security = query.Get("security")
 	config.Type = query.Get("type")
-	config.HeaderType = query.Get("headerType")
 	config.Flow = query.Get("flow")
+
+	// Transport settings
+	config.HeaderType = query.Get("headerType")
 	config.Path = query.Get("path")
 	config.Host = query.Get("host")
+
+	// TLS/Reality settings
 	config.SNI = query.Get("sni")
 	config.Fingerprint = query.Get("fp")
 	config.PublicKey = query.Get("pbk")
 	config.ShortID = query.Get("sid")
+
+	// gRPC settings
+	if config.Type == "grpc" {
+		config.ServiceName = query.Get("serviceName")
+		config.MultiMode = query.Get("multiMode") == "true"
+		if idleTimeout := query.Get("idleTimeout"); idleTimeout != "" {
+			if timeout, err := strconv.Atoi(idleTimeout); err == nil {
+				config.IdleTimeout = timeout
+			}
+		}
+		if windowSize := query.Get("windowSize"); windowSize != "" {
+			if size, err := strconv.Atoi(windowSize); err == nil {
+				config.WindowsSize = size
+			}
+		}
+	}
+
+	// Additional TLS settings
+	config.AllowInsecure = query.Get("allowInsecure") == "true"
+	if alpn := query.Get("alpn"); alpn != "" {
+		config.ALPN = strings.Split(alpn, ",")
+	}
+
+	// User level
+	if level := query.Get("level"); level != "" {
+		if l, err := strconv.Atoi(level); err == nil {
+			config.Level = l
+		}
+	}
+
+	// Store additional settings
+	for k, v := range query {
+		if len(v) > 0 {
+			config.Settings[k] = v[0]
+		}
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
+	// Remove vmess:// prefix and decode base64
+	vmessStr := strings.TrimPrefix(u.String(), "vmess://")
+	decoded, err := base64.StdEncoding.DecodeString(vmessStr)
+	if err != nil {
+		decoded, err = base64.RawURLEncoding.DecodeString(vmessStr)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding VMess link: %v", err)
+		}
+	}
+
+	// Parse JSON
+	var vmessConfig map[string]interface{}
+	if err := json.Unmarshal(decoded, &vmessConfig); err != nil {
+		return nil, fmt.Errorf("error parsing VMess config: %v", err)
+	}
+
+	config := &models.ProxyConfig{
+		Protocol: "vmess",
+		Settings: make(map[string]string),
+	}
+
+	// Basic settings
+	if ps, ok := vmessConfig["ps"].(string); ok {
+		config.Name = ps
+	}
+	if add, ok := vmessConfig["add"].(string); ok {
+		config.Server = add
+	}
+	if port, ok := vmessConfig["port"].(float64); ok {
+		config.Port = int(port)
+	}
+	if id, ok := vmessConfig["id"].(string); ok {
+		config.UUID = id
+	}
+	if aid, ok := vmessConfig["aid"].(float64); ok {
+		config.VMessAid = int(aid)
+	}
+	if net, ok := vmessConfig["net"].(string); ok {
+		config.Type = net
+	}
+	if host, ok := vmessConfig["host"].(string); ok {
+		config.Host = host
+	}
+	if path, ok := vmessConfig["path"].(string); ok {
+		config.Path = path
+	}
+
+	// TLS settings
+	if tls, ok := vmessConfig["tls"].(string); ok && tls == "tls" {
+		config.Security = "tls"
+		if sni, ok := vmessConfig["sni"].(string); ok {
+			config.SNI = sni
+		}
+		if fp, ok := vmessConfig["fp"].(string); ok {
+			config.Fingerprint = fp
+		} else {
+			config.Fingerprint = "chrome"
+		}
+		if alpn, ok := vmessConfig["alpn"].(string); ok {
+			config.ALPN = strings.Split(alpn, ",")
+		}
+	}
+
+	// gRPC settings
+	if config.Type == "grpc" {
+		if svcName, ok := vmessConfig["serviceName"].(string); ok {
+			config.ServiceName = svcName
+		}
+		if multiMode, ok := vmessConfig["multiMode"].(bool); ok {
+			config.MultiMode = multiMode
+		}
+		if timeout, ok := vmessConfig["idle_timeout"].(float64); ok {
+			config.IdleTimeout = int(timeout)
+		}
+		if size, ok := vmessConfig["initial_windows_size"].(float64); ok {
+			config.WindowsSize = int(size)
+		}
+	}
+
+	// Security level
+	if level, ok := vmessConfig["level"].(float64); ok {
+		config.Level = int(level)
+	}
+
+	// Store all string values as settings
+	for k, v := range vmessConfig {
+		if str, ok := v.(string); ok {
+			config.Settings[k] = str
+		}
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 
 	return config, nil
 }
@@ -136,6 +301,7 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config := &models.ProxyConfig{
 		Protocol: "trojan",
 		Name:     strings.TrimPrefix(u.Fragment, ""),
+		Settings: make(map[string]string),
 	}
 
 	config.Password = u.User.Username()
@@ -144,21 +310,57 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 	if len(hostParts) != 2 {
 		return nil, fmt.Errorf("invalid server address format: %s", u.Host)
 	}
+
 	config.Server = hostParts[0]
-	fmt.Sscanf(hostParts[1], "%d", &config.Port)
-	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("skipping port: %d", config.Port)
+	if _, err := fmt.Sscanf(hostParts[1], "%d", &config.Port); err != nil {
+		return nil, fmt.Errorf("invalid port number: %v", err)
 	}
 
 	query := u.Query()
 
+	// Basic settings
 	config.Security = query.Get("security")
 	config.Type = query.Get("type")
-	config.HeaderType = query.Get("headerType")
+	config.Flow = query.Get("flow")
+
+	// Transport settings
 	config.Path = query.Get("path")
 	config.Host = query.Get("host")
+
+	// TLS settings
 	config.SNI = query.Get("sni")
 	config.Fingerprint = query.Get("fp")
+	config.AllowInsecure = query.Get("allowInsecure") == "true"
+	if alpn := query.Get("alpn"); alpn != "" {
+		config.ALPN = strings.Split(alpn, ",")
+	}
+
+	// gRPC settings
+	if config.Type == "grpc" {
+		config.ServiceName = query.Get("serviceName")
+		config.MultiMode = query.Get("multiMode") == "true"
+		if idleTimeout := query.Get("idleTimeout"); idleTimeout != "" {
+			if timeout, err := strconv.Atoi(idleTimeout); err == nil {
+				config.IdleTimeout = timeout
+			}
+		}
+		if windowSize := query.Get("windowSize"); windowSize != "" {
+			if size, err := strconv.Atoi(windowSize); err == nil {
+				config.WindowsSize = size
+			}
+		}
+	}
+
+	// Store additional settings
+	for k, v := range query {
+		if len(v) > 0 {
+			config.Settings[k] = v[0]
+		}
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 
 	return config, nil
 }
@@ -167,17 +369,22 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config := &models.ProxyConfig{
 		Protocol: "shadowsocks",
 		Name:     strings.TrimPrefix(u.Fragment, ""),
+		Settings: make(map[string]string),
 	}
 
-	methodPass, err := base64.StdEncoding.DecodeString(u.User.String())
+	methodPass, err := base64.URLEncoding.DecodeString(u.User.String())
 	if err != nil {
-		return nil, fmt.Errorf("error decoding method and password: %v", err)
+		methodPass, err = base64.StdEncoding.DecodeString(u.User.String())
+		if err != nil {
+			return nil, fmt.Errorf("error decoding method and password: %v", err)
+		}
 	}
 
 	parts := strings.SplitN(string(methodPass), ":", 2)
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid method:password format")
 	}
+
 	config.Method = parts[0]
 	config.Password = parts[1]
 
@@ -185,10 +392,14 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 	if len(hostParts) != 2 {
 		return nil, fmt.Errorf("invalid server address format: %s", u.Host)
 	}
+
 	config.Server = hostParts[0]
-	fmt.Sscanf(hostParts[1], "%d", &config.Port)
-	if config.Port == 0 || config.Port == 1 {
-		return nil, fmt.Errorf("skipping port: %d", config.Port)
+	if _, err := fmt.Sscanf(hostParts[1], "%d", &config.Port); err != nil {
+		return nil, fmt.Errorf("invalid port number: %v", err)
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
 
 	return config, nil

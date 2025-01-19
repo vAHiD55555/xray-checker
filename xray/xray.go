@@ -21,29 +21,44 @@ type TemplateData struct {
 }
 
 func generateConfig(proxies []*models.ProxyConfig, startPort int, xrayLogLevel string) ([]byte, error) {
+	if len(proxies) == 0 {
+		return nil, fmt.Errorf("no valid proxy configurations found")
+	}
+
 	data := TemplateData{
 		Proxies:      proxies,
 		StartPort:    startPort,
 		XrayLogLevel: xrayLogLevel,
 	}
 
+	funcMap := template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+		"toJson": func(v interface{}) string {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "null"
+			}
+			return string(b)
+		},
+	}
+
 	tmpl, err := template.New("xray.json.tmpl").
-		Funcs(template.FuncMap{
-			"add": func(a, b int) int { return a + b },
-		}).
+		Funcs(funcMap).
 		ParseFS(templates, "templates/xray.json.tmpl")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing template: %v", err)
 	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing template: %v", err)
 	}
 
+	// Validate the generated JSON
 	var jsonCheck interface{}
 	if err := json.Unmarshal(buf.Bytes(), &jsonCheck); err != nil {
-		return nil, err
+		log.Printf("Generated invalid JSON: %s", buf.String())
+		return nil, fmt.Errorf("invalid JSON generated: %v", err)
 	}
 
 	return buf.Bytes(), nil

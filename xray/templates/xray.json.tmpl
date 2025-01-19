@@ -1,3 +1,4 @@
+{{/* Base template structure */}}
 {
   "log": {
     "loglevel": "{{.XrayLogLevel}}"
@@ -14,121 +15,34 @@
         "enabled": true,
         "destOverride": ["http", "tls", "quic"],
         "routeOnly": true
+      },
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "userLevel": 0
       }
     }
     {{- end }}
   ],
   "outbounds": [
-    {
-      "tag": "direct",
-      "protocol": "freedom",
-      "settings": {
-        "domainStrategy": "UseIP"
-      },
-      "streamSettings": {
-        "sockopt": {}
-      }
-    },
-    {
-      "tag": "block",
-      "protocol": "blackhole",
-      "settings": {}
-    },
-    {
-      "tag": "dns-out",
-      "protocol": "dns",
-      "settings": {
-        "address": "119.29.29.29",
-        "network": "udp",
-        "port": 53
-      },
-      "streamSettings": {
-        "sockopt": {}
-      }
-    }
+    {{- template "default_outbounds" . -}}
     {{- range $proxy := .Proxies }},
-    {{- if eq $proxy.Protocol "vless" }}
     {
       "tag": "{{$proxy.Name}}",
-      "protocol": "vless",
-      "settings": {
-        "vnext": [{
-          "address": "{{$proxy.Server}}",
-          "port": {{$proxy.Port}},
-          "users": [{
-            "id": "{{$proxy.UUID}}",
-            "encryption": "none",
-            "flow": "{{$proxy.Flow}}"
-          }]
-        }]
-      },
-      "streamSettings": {
-        "network": "{{$proxy.Type}}",
-        "security": "{{$proxy.Security}}",
-        {{- if eq $proxy.Security "reality" }}
-        "realitySettings": {
-          "serverName": "{{$proxy.SNI}}",
-          "fingerprint": "{{$proxy.Fingerprint}}",
-          "publicKey": "{{$proxy.PublicKey}}",
-          "shortId": "{{$proxy.ShortID}}"
-        }
-        {{- end }},
-        "sockopt": {}
-      }
+      "protocol": "{{$proxy.Protocol}}",
+      {{- template "outbound_core" $proxy }}
     }
-    {{- else if eq $proxy.Protocol "trojan" }}
-    {
-      "tag": "{{$proxy.Name}}",
-      "protocol": "trojan",
-      "settings": {
-        "servers": [{
-          "address": "{{$proxy.Server}}",
-          "port": {{$proxy.Port}},
-          "password": "{{$proxy.Password}}"
-        }]
-      },
-      "streamSettings": {
-        "network": "{{$proxy.Type}}",
-        "security": "{{$proxy.Security}}",
-        {{- if eq $proxy.Security "tls" }}
-        "tlsSettings": {
-          "allowInsecure": false
-        },
-        {{- end }}
-        {{- if eq $proxy.Type "ws" }}
-        "wsSettings": {
-          "path": "{{$proxy.Path}}",
-          "headers": {
-            "Host": "{{$proxy.Host}}"
-          }
-        },
-        {{- end }}
-        "sockopt": {}
-      }
-    }
-    {{- else if eq $proxy.Protocol "shadowsocks" }}
-    {
-      "tag": "{{$proxy.Name}}",
-      "protocol": "shadowsocks",
-      "settings": {
-        "servers": [{
-          "address": "{{$proxy.Server}}",
-          "port": {{$proxy.Port}},
-          "method": "{{$proxy.Method}}",
-          "password": "{{$proxy.Password}}"
-        }]
-      },
-      "streamSettings": {
-        "sockopt": {}
-      }
-    }
-    {{- end }}
     {{- end }}
   ],
   "routing": {
+    "domainStrategy": "AsIs",
     "rules": [
-      {{- range $index, $proxy := .Proxies }}
-      {{- if ne $index 0 }},{{ end }}
+      {
+        "type": "field",
+        "protocol": ["dns"],
+        "outboundTag": "dns-out"
+      }
+      {{- range $proxy := .Proxies }},
       {
         "type": "field",
         "inboundTag": ["{{$proxy.Name}}_{{$proxy.Protocol}}_TRANSPORT"],
@@ -138,3 +52,137 @@
     ]
   }
 }
+
+{{/* Default outbounds template */}}
+{{- define "default_outbounds" -}}
+{
+  "tag": "direct",
+  "protocol": "freedom",
+  "settings": {
+    "domainStrategy": "UseIP"
+  },
+  "streamSettings": {
+    "sockopt": {}
+  }
+},
+{
+  "tag": "block",
+  "protocol": "blackhole",
+  "settings": {}
+},
+{
+  "tag": "dns-out",
+  "protocol": "dns",
+  "settings": {
+    "address": "1.1.1.1",
+    "network": "udp",
+    "port": 53
+  },
+  "streamSettings": {
+    "sockopt": {}
+  }
+}
+{{- end }}
+
+{{/* Core outbound template combining settings and stream settings */}}
+{{- define "outbound_core" }}
+  "settings": {
+    {{- if eq .Protocol "vmess" }}
+    "vnext": [{
+      "address": "{{.Server}}",
+      "port": {{.Port}},
+      "users": [{
+        "id": "{{.UUID}}",
+        "alterId": {{.GetAlterId}},
+        "security": "{{.GetVMessSecurity}}",
+        "level": {{.GetUserLevel}}
+      }]
+    }]
+    {{- else if eq .Protocol "vless" }}
+    "vnext": [{
+      "address": "{{.Server}}",
+      "port": {{.Port}},
+      "users": [{
+        "id": "{{.UUID}}",
+        "encryption": "none",
+        "level": {{.GetUserLevel}}
+        {{- if .Flow }},
+        "flow": "{{.Flow}}"
+        {{- end }}
+      }]
+    }]
+    {{- else if eq .Protocol "trojan" }}
+    "servers": [{
+      "address": "{{.Server}}",
+      "port": {{.Port}},
+      "password": "{{.Password}}"
+      {{- if .Flow }},
+      "flow": "{{.Flow}}"
+      {{- end }}
+    }]
+    {{- else if eq .Protocol "shadowsocks" }}
+    "servers": [{
+      "address": "{{.Server}}",
+      "port": {{.Port}},
+      "method": "{{.Method}}",
+      "password": "{{.Password}}"
+    }]
+    {{- end }}
+  },
+  "streamSettings": {
+    {{- if .Type }}
+    "network": "{{.Type}}",
+    {{- else }}
+    "network": "tcp",
+    {{- end }}
+    {{- if .Security }}
+    "security": "{{.Security}}"
+    {{- else }}
+    "security": "none"
+    {{- end }}
+
+    {{- if and .Security (eq .Security "tls") }},
+    "tlsSettings": {
+      "serverName": "{{.SNI}}",
+      "allowInsecure": {{.AllowInsecure}},
+      "fingerprint": "{{.Fingerprint}}"
+      {{- if .ALPN }},
+      "alpn": {{.GetALPNSettings | toJson}}
+      {{- end }}
+    }
+    {{- end }}
+
+    {{- if and .Security (eq .Security "reality") }},
+    "realitySettings": {
+      "serverName": "{{.SNI}}",
+      "fingerprint": "{{.Fingerprint}}",
+      "publicKey": "{{.PublicKey}}",
+      "shortId": "{{.ShortID}}"
+    }
+    {{- end }}
+
+    {{- if and .Type (eq .Type "ws") }},
+    "wsSettings": {
+      "path": "{{.Path}}",
+      "headers": {
+        "Host": "{{.Host}}"
+      }
+    }
+    {{- end }}
+
+    {{- if .HasGRPCSettings }},
+    "grpcSettings": {
+      "serviceName": "{{.GetServiceName}}",
+      "multiMode": {{.MultiMode}}
+      {{- if gt .IdleTimeout 0 }},
+      "idle_timeout": {{.IdleTimeout}}
+      {{- end }}
+      {{- if gt .WindowsSize 0 }},
+      "initial_windows_size": {{.WindowsSize}}
+      {{- end }}
+    }
+    {{- end }},
+    
+    "sockopt": {}
+  }
+{{- end }}
