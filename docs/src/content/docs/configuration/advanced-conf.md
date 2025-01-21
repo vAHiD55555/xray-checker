@@ -7,7 +7,7 @@ description: Advanced configuration options
 
 ### Custom IP Check Services
 
-You can use alternative IP check services:
+You can use alternative IP check services (see [check methods](/configuration/check-methods) for details):
 
 - `http://ip.sb`
 - `https://api64.ipify.org`
@@ -21,7 +21,7 @@ PROXY_IP_CHECK_URL=http://ip.sb
 
 ### Custom Status Check URLs
 
-Alternative status check URLs:
+Alternative URLs for status checking (see [check methods](/configuration/check-methods) for details):
 
 - `http://www.gstatic.com/generate_204`
 - `http://www.qualcomm.cn/generate_204`

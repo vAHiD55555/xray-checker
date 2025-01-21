@@ -3,7 +3,9 @@ title: Subscription Format
 description: Subscription format options and examples
 ---
 
-Xray Checker supports four different formats for proxy configuration:
+Xray Checker supports four different formats for proxy configuration. Use the [environment variable](/configuration/envs#subscription_url) `SUBSCRIPTION_URL` for setup.
+
+For information about how proxies are verified, see [check methods](/configuration/check-methods).
 
 ### 1. Subscription URL (Default)
 

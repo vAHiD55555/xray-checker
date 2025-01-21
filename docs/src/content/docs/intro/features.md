@@ -1,76 +1,49 @@
 ---
 title: Features
-description: Features of Xray Checker
+description: Xray Checker Features
+tableOfContents: false
 ---
 
-## Core Capabilities
+### 🚀 Core Features
 
-### Protocol Support
+- 🔍 Monitor the health of Xray proxy servers with support for various protocols (VLESS, VMess, Trojan, Shadowsocks)
 
-- VLESS with various security options (TLS, XTLS, Reality)
-- VMess with customizable security settings
-- Trojan protocol integration
-- Shadowsocks with multiple encryption methods
+- 🔄 Automatic proxy configuration updates from subscription URLs with [configurable intervals](/configuration/envs#subscription_update_interval)
 
-### Monitoring Infrastructure
+- 📊 [Export metrics](/integrations/metrics) in Prometheus format with proxy status and latency information
 
-- Prometheus metrics export
-- Individual status endpoints for each proxy
-- Latency measurements
-- Detailed connection statistics
-- Custom instance labeling for distributed setups
+- 🌓 Web interface with dark/light theme for monitoring all proxy endpoints status
 
-### Automation & Management
+### 📝 Formats and Configuration
 
-- Subscription-based configuration management
-- Automatic proxy configuration updates
-- Dynamic proxy health checking
-- Configurable check intervals
-- Multiple check methods (IP-based, status-based)
+- 📋 [Support for various configuration formats](/configuration/subscription):
 
-### Security & Integration
+  - 🔗 URL subscriptions
+  - 🔐 Base64-encoded strings
+  - 📄 JSON files
 
-- Basic authentication support for sensitive endpoints
-- Prometheus pushgateway support
-- Uptime Kuma integration
-- Flexible deployment options (standalone, Docker, GitHub Actions)
+### 🔌 Integrations
 
-### Web Interface
+- 📥 [Automatic endpoint generation](/integrations/uptime-kuma) for integration with monitoring systems (e.g., Uptime-Kuma)
 
-- Clean, intuitive dashboard
-- Real-time status overview
-- Configuration details display
-- Dark/light theme support
-- Mobile-responsive design
+- ⏱️ [Latency simulation](/configuration/advanced-conf) for endpoints to ensure accurate monitoring system testing
 
-## Advanced Features
+- 📡 [Integration with Prometheus Pushgateway](/integrations/prometheus#pushgateway-integration) for sending metrics to external monitoring systems
 
-### Check Methods
+### ⚡ Check Methods
 
-- IP-based verification through external services
-- Status code verification with customizable endpoints
-- Configurable timeouts and retry logic
-- Latency simulation options for accurate monitoring
+- 🔧 [Support for two proxy verification methods](/configuration/check-methods):
+  - 🌐 Via IP address comparison
+  - ✅ Via HTTP status checks
 
-### Deployment Options
+### 🔒 Security
 
-- Standalone binary for direct server deployment
-- Docker container for containerized environments
-- Docker Compose support for orchestrated setups
-- GitHub Actions integration for cloud-based monitoring
+- 🛡️ [Protect metrics and web interface](/configuration/advanced-conf#security-settings) using Basic Authentication
 
-### Monitoring Capabilities
+### 🚀 Deployment
 
-- Real-time proxy status monitoring
-- Latency tracking and reporting
-- Success/failure rate metrics
-- Instance-based metric segregation
-- Custom label support for better organization
+- 🐳 Can be run both in a [Docker container](/usage/docker) (including Docker Compose) and as a [standalone CLI application](/usage/cli)
 
-### Configuration Management
-
-- Environment variable support
-- CLI parameter flexibility
-- JSON configuration file support
-- Dynamic subscription updates
-- Multiple source format support (Base64, JSON, plain text)
+:::tip[💡 Quick Start]
+To start using Xray Checker right now, go to the [Quick Start](/intro/quick-start) section
+:::

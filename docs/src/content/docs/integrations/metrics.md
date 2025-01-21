@@ -3,7 +3,9 @@ title: Metrics
 description: Metrics options and examples
 ---
 
-Xray Checker provides two Prometheus metrics for monitoring proxy status and performance:
+Xray Checker provides two Prometheus metrics for monitoring proxy status and performance. For detailed setup instructions, see [Prometheus integration](/integrations/prometheus).
+
+For metric visualization, we recommend using [Grafana](/integrations/grafana).
 
 ### xray_proxy_status
 
@@ -16,6 +18,10 @@ Status metric indicating proxy availability:
   - `address`: Server address and port
   - `name`: Proxy configuration name
   - `instance`: Instance name (if configured)
+
+:::tip
+See [advanced configuration](/configuration/advanced-conf#instance-labeling) for instance labeling setup.
+:::
 
 Example:
 
