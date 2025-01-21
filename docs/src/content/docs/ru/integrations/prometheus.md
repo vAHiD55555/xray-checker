@@ -1,11 +1,11 @@
 ---
 title: Prometheus
-description: Prometheus integration options and examples
+description: Варианты и примеры интеграции с Prometheus
 ---
 
-### Direct Scraping
+### Прямой сбор метрик
 
-Basic prometheus.yml configuration:
+Базовая конфигурация prometheus.yml:
 
 ```yaml
 scrape_configs:
@@ -16,7 +16,7 @@ scrape_configs:
     scrape_interval: 1m
 ```
 
-With authentication:
+С аутентификацией:
 
 ```yaml
 scrape_configs:
@@ -29,9 +29,9 @@ scrape_configs:
       - targets: ["localhost:2112"]
 ```
 
-### Pushgateway Integration
+### Интеграция с Pushgateway
 
-Prometheus configuration for Pushgateway:
+Конфигурация Prometheus для Pushgateway:
 
 ```yaml
 scrape_configs:
@@ -41,7 +41,7 @@ scrape_configs:
       - targets: ["pushgateway:9091"]
 ```
 
-Xray Checker configuration:
+Конфигурация Xray Checker:
 
 ```bash
 METRICS_PUSH_URL="http://user:password@pushgateway:9091"

@@ -1,5 +1,5 @@
 ---
-title: Environments
+title: Environment Variables
 description: Environment variables for Xray Checker
 ---
 
@@ -8,115 +8,161 @@ description: Environment variables for Xray Checker
 ### SUBSCRIPTION_URL
 
 - CLI: `--subscription-url`
-- Default: -
-- Description: Subscription URL for proxy configurations
+- Required: Yes
+- Default: None
+
+URL, Base64 string or file path for proxy configuration. Supports multiple formats:
+
+- HTTP/HTTPS URL with Base64 encoded content
+- Direct Base64 encoded string
+- Local file path with prefix `file://`
+- Local folder path with prefix `folder://`
 
 ### SUBSCRIPTION_UPDATE
 
 - CLI: `--subscription-update`
+- Required: No
 - Default: `true`
-- Description: Auto-update subscription
+
+Enables automatic updates of proxy configuration from subscription source. When enabled, Xray Checker will periodically check for changes and update configurations accordingly.
 
 ### SUBSCRIPTION_UPDATE_INTERVAL
 
 - CLI: `--subscription-update-interval`
+- Required: No
 - Default: `300`
-- Description: Subscription update interval in seconds
+
+Time in seconds between subscription update checks. Only used when `SUBSCRIPTION_UPDATE` is enabled.
 
 ## Proxy
 
 ### PROXY_CHECK_INTERVAL
 
 - CLI: `--proxy-check-interval`
+- Required: No
 - Default: `300`
-- Description: Check interval in seconds
+
+Time in seconds between proxy availability checks. Each check verifies all configured proxies.
 
 ### PROXY_CHECK_METHOD
 
 - CLI: `--proxy-check-method`
+- Required: No
 - Default: `ip`
-- Description: Check method (ip/status)
+- Values: `ip`, `status`
+
+Method used to verify proxy functionality:
+
+- `ip`: Compares IP addresses with and without proxy
+- `status`: Checks HTTP status code from a test request
 
 ### PROXY_IP_CHECK_URL
 
 - CLI: `--proxy-ip-check-url`
+- Required: No
 - Default: `https://api.ipify.org?format=text`
-- Description: IP check service URL
+
+URL used for IP verification when `PROXY_CHECK_METHOD=ip`. Should return current IP address in plain text format.
 
 ### PROXY_STATUS_CHECK_URL
 
 - CLI: `--proxy-status-check-url`
+- Required: No
 - Default: `http://cp.cloudflare.com/generate_204`
-- Description: Status check URL
+
+URL used for status verification when `PROXY_CHECK_METHOD=status`. Should return HTTP 204/200 status code.
 
 ### PROXY_TIMEOUT
 
 - CLI: `--proxy-timeout`
+- Required: No
 - Default: `30`
-- Description: Check timeout in seconds
+
+Maximum time in seconds to wait for proxy response during checks.
 
 ### SIMULATE_LATENCY
 
 - CLI: `--simulate-latency`
+- Required: No
 - Default: `true`
-- Description: Add latency to response
+
+Adds measured latency to endpoint responses, useful for monitoring systems.
 
 ## Xray
 
 ### XRAY_START_PORT
 
 - CLI: `--xray-start-port`
+- Required: No
 - Default: `10000`
-- Description: Starting port for configurations
+
+Starting port number for SOCKS5 proxies. Each proxy will use sequential ports starting from this number.
 
 ### XRAY_LOG_LEVEL
 
 - CLI: `--xray-log-level`
+- Required: No
 - Default: `none`
-- Description: Log level (debug/info/warning/error/none)
+- Values: `debug`, `info`, `warning`, `error`, `none`
+
+Controls Xray Core logging verbosity.
 
 ## Metrics
 
 ### METRICS_PORT
 
 - CLI: `--metrics-port`
+- Required: No
 - Default: `2112`
-- Description: Metrics port
+
+Port number for HTTP server exposing metrics and status endpoints.
 
 ### METRICS_PROTECTED
 
 - CLI: `--metrics-protected`
+- Required: No
 - Default: `false`
-- Description: Protect metrics with Basic Auth
+
+Enables basic authentication for metrics and status endpoints.
 
 ### METRICS_USERNAME
 
 - CLI: `--metrics-username`
+- Required: No
 - Default: `metricsUser`
-- Description: Basic Auth username
+
+Username for basic authentication when `METRICS_PROTECTED=true`.
 
 ### METRICS_PASSWORD
 
 - CLI: `--metrics-password`
+- Required: No
 - Default: `MetricsVeryHardPassword`
-- Description: Basic Auth password
 
-### METRICS_PUSH_URL
-
-- CLI: `--metrics-push-url`
-- Default: -
-- Description: Prometheus pushgateway URL
+Password for basic authentication when `METRICS_PROTECTED=true`.
 
 ### METRICS_INSTANCE
 
 - CLI: `--metrics-instance`
-- Default: -
-- Description: Instance label for metrics
+- Required: No
+- Default: None
+
+Instance label added to all metrics. Useful for distinguishing multiple Xray Checker instances.
+
+### METRICS_PUSH_URL
+
+- CLI: `--metrics-push-url`
+- Required: No
+- Default: None
+
+Prometheus Pushgateway URL for metric pushing. Format: `https://user:pass@host:port`
 
 ## Other
 
 ### RUN_ONCE
 
 - CLI: `--run-once`
+- Required: No
 - Default: `false`
-- Description: Run one check cycle and exit
+
+Performs single check cycle and exits. Useful for scheduled execution environments.

@@ -1,17 +1,17 @@
 ---
 title: Docker
-description: Running Xray Checker with Docker and Docker Compose
+description: Запуск Xray Checker с помощью Docker и Docker Compose
 ---
 
-### Basic Docker Usage
+### Базовое использование Docker
 
-Pull the latest image:
+Загрузка последнего образа:
 
 ```bash
 docker pull kutovoys/xray-checker
 ```
 
-Run with minimal configuration:
+Запуск с минимальной конфигурацией:
 
 ```bash
 docker run -d \
@@ -20,7 +20,7 @@ docker run -d \
   kutovoys/xray-checker
 ```
 
-### Full Docker Configuration
+### Полная конфигурация Docker
 
 ```bash
 docker run -d \
@@ -48,7 +48,7 @@ docker run -d \
 
 ### Docker Compose
 
-Basic docker-compose.yml:
+Базовый docker-compose.yml:
 
 ```yaml
 services:
@@ -60,7 +60,7 @@ services:
       - "2112:2112"
 ```
 
-Full docker-compose.yml:
+Полный docker-compose.yml:
 
 ```yaml
 services:
@@ -90,9 +90,9 @@ services:
     restart: unless-stopped
 ```
 
-### Docker Network Configuration
+### Настройка сети Docker
 
-Custom network setup:
+Пользовательская настройка сети:
 
 ```yaml
 services:
@@ -107,9 +107,9 @@ networks:
     name: monitoring-network
 ```
 
-### Docker Health Checks
+### Проверка работоспособности Docker
 
-Add health check to docker-compose.yml:
+Добавление проверки работоспособности в docker-compose.yml:
 
 ```yaml
 services:

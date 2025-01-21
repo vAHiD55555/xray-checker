@@ -3,28 +3,59 @@ title: Check Methods
 description: Check methods options and examples
 ---
 
-Xray Checker supports two proxy checking methods:
+## Check Methods
 
-## IP method (default)
+Xray Checker supports two methods for verifying proxy functionality:
 
-The `ip` method checks proxy functionality by comparing IP addresses:
+### IP Check Method (Default)
 
-1. Gets current IP without using proxy
-2. Connects through proxy and gets IP through it
-3. Compares IP addresses - if they differ, proxy is considered working
+```bash
+--proxy-check-method=ip
+```
 
-## Status method
+This method:
 
-The `status` method checks proxy functionality by sending an HTTP request to a specified URL:
+1. Gets current IP without proxy
+2. Connects through proxy
+3. Gets IP through proxy
+4. Compares IPs to verify proxy is working
+
+Benefits:
+
+- More reliable verification
+- Confirms actual proxy functionality
+- Detects transparent proxies
+
+Configuration:
+
+```bash
+PROXY_CHECK_METHOD=ip
+PROXY_IP_CHECK_URL=https://api.ipify.org?format=text
+PROXY_TIMEOUT=30
+```
+
+### Status Check Method
+
+```bash
+--proxy-check-method=status
+```
+
+This method:
 
 1. Connects through proxy
-2. Sends GET request to URL specified in `PROXY_STATUS_CHECK_URL` (default is `http://cp.cloudflare.com/generate_204`)
-3. If response with code 204 is received, proxy is considered working
+2. Requests specified URL
+3. Verifies response status code
 
-This method can be useful when:
+Benefits:
 
-- Faster check is needed
-- IP method doesn't work due to IP check service blocks
-- Need to verify accessibility of specific resource through proxy
+- Faster verification
+- Lower bandwidth usage
+- Works with restrictive firewalls
 
-To use this method specify:
+Configuration:
+
+```bash
+PROXY_CHECK_METHOD=status
+PROXY_STATUS_CHECK_URL=http://cp.cloudflare.com/generate_204
+PROXY_TIMEOUT=30
+```

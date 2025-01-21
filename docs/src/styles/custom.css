@@ -1,0 +1,17 @@
+html[data-theme="light"] .beoe-dark {
+  display: none;
+}
+
+html[data-theme="dark"] .beoe-light {
+  display: none;
+}
+
+/* Скрываем темную версию в светлой теме */
+html[data-theme="light"] [class*="mermaid-"] .beoe-dark {
+  display: none !important;
+}
+
+/* Скрываем светлую версию в темной теме */
+html[data-theme="dark"] [class*="mermaid-"] .beoe-light {
+  display: none !important;
+}
