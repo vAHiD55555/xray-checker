@@ -1,10 +1,10 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
-import { rehypeMermaid } from "@beoe/rehype-mermaid";
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://xray-checker.kutovoy.dev",
   integrations: [
     starlight({
       title: "Xray Checker",
@@ -223,24 +223,4 @@ export default defineConfig({
       ],
     }),
   ],
-  markdown: {
-    rehypePlugins: [
-      [
-        rehypeMermaid,
-        {
-          strategy: "file",
-          fsPath: "public/beoe",
-          webPath: "/beoe",
-          darkScheme: "class",
-          mermaidConfig: {
-            theme: "default",
-            themeVariables: {
-              darkMode: true,
-            },
-          },
-          cssClassesPrefix: "beoe-",
-        },
-      ],
-    ],
-  },
 });
