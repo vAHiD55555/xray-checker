@@ -43,20 +43,6 @@ Xray Checker consists of several key components working together to provide comp
    - Handles API requests
    - Manages authentication
 
-## Data Flow
-
-```mermaid alt="Architecture of Xray Checker"
-graph TB
-    A[Subscription URL] --> B[Subscription Manager]
-    B --> C[Configuration Parser]
-    C --> D[Xray Core]
-    D --> E[Proxy Checker]
-    E --> F[Metrics Collector]
-    F --> G[Prometheus Metrics]
-    F --> H[Status Endpoints]
-    E --> I[Web Interface]
-```
-
 ## Component Details
 
 ### Subscription Manager
@@ -125,35 +111,6 @@ Provides the web interface and API:
 - Secure credential handling
 - Protected metric endpoints
 - Sanitized configuration handling
-
-## Deployment Architecture
-
-### Standalone Deployment
-
-```mermaid alt="Standalone Deployment"
-graph LR
-    A[Binary] --> B[Local System]
-    B --> C[Metrics Port]
-    B --> D[SOCKS5 Ports]
-```
-
-### Docker Deployment
-
-```mermaid alt="Docker Deployment"
-graph LR
-    A[Docker Container] --> B[Docker Network]
-    B --> C[Exposed Metrics Port]
-    B --> D[Internal SOCKS5 Ports]
-```
-
-### GitHub Actions Deployment
-
-```mermaid alt="GitHub Actions Deployment"
-graph LR
-    A[GitHub Runner] --> B[Xray Checker]
-    B --> C[Push Gateway]
-    C --> D[Prometheus]
-```
 
 ## Performance Considerations
 
