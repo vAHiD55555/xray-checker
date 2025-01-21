@@ -4,90 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"xray-checker/config"
 	"xray-checker/models"
-	"xray-checker/xray"
 )
-
-func InitializeConfiguration(configFile string) (*[]*models.ProxyConfig, error) {
-	configs, err := ParseSubscription(config.CLIConfig.Subscription.URL)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing subscription: %v", err)
-	}
-	proxyConfigs := &configs
-
-	xray.PrepareProxyConfigs(*proxyConfigs)
-	if err := xray.GenerateAndSaveConfig(*proxyConfigs, config.CLIConfig.Xray.StartPort, configFile, config.CLIConfig.Xray.LogLevel); err != nil {
-		return nil, fmt.Errorf("error generating Xray config: %v", err)
-	}
-
-	return proxyConfigs, nil
-}
-
-func ParseSubscriptionURL(subscriptionURL string) ([]string, error) {
-	if _, err := url.Parse(subscriptionURL); err != nil {
-		return nil, fmt.Errorf("error parsing URL: %v", err)
-	}
-
-	req, err := http.NewRequest("GET", subscriptionURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req.Header.Set("User-Agent", "Xray-Checker")
-	req.Header.Set("Accept", "*/*")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error getting subscription: %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %v", err)
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(string(body))
-	if err != nil {
-		links := strings.Split(string(body), "\n")
-		var validLinks []string
-		for _, link := range links {
-			if link = strings.TrimSpace(link); link == "" {
-				continue
-			}
-			if _, err := url.Parse(link); err == nil {
-				validLinks = append(validLinks, link)
-			}
-		}
-		if len(validLinks) == 0 {
-			return nil, fmt.Errorf("no valid links found in subscription")
-		}
-		return validLinks, nil
-	}
-
-	links := strings.Split(string(decoded), "\n")
-	return filterEmptyLinks(links), nil
-}
-
-func filterEmptyLinks(links []string) []string {
-	var filtered []string
-	for _, link := range links {
-		if link = strings.TrimSpace(link); link != "" {
-			if _, err := url.Parse(link); err == nil {
-				filtered = append(filtered, link)
-			}
-		}
-	}
-	return filtered
-}
 
 func ParseProxyURL(proxyURL string) (*models.ProxyConfig, error) {
 	proxyURL = strings.TrimSpace(proxyURL)
@@ -135,6 +56,10 @@ func ParseVLESSConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config.Server = hostParts[0]
 	if _, err := fmt.Sscanf(hostParts[1], "%d", &config.Port); err != nil {
 		return nil, fmt.Errorf("invalid port number: %v", err)
+	}
+
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
 	}
 
 	query := u.Query()
@@ -251,6 +176,10 @@ func ParseVMessConfig(u *url.URL) (*models.ProxyConfig, error) {
 		}
 	}
 
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
+	}
+
 	if config.Type == "grpc" {
 		if svcName, ok := vmessConfig["serviceName"].(string); ok {
 			config.ServiceName = svcName
@@ -300,6 +229,10 @@ func ParseTrojanConfig(u *url.URL) (*models.ProxyConfig, error) {
 	config.Server = hostParts[0]
 	if _, err := fmt.Sscanf(hostParts[1], "%d", &config.Port); err != nil {
 		return nil, fmt.Errorf("invalid port number: %v", err)
+	}
+
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
 	}
 
 	query := u.Query()
@@ -379,28 +312,13 @@ func ParseShadowsocksConfig(u *url.URL) (*models.ProxyConfig, error) {
 		return nil, fmt.Errorf("invalid port number: %v", err)
 	}
 
+	if config.Port == 0 || config.Port == 1 {
+		return nil, fmt.Errorf("skipping port: %d", config.Port)
+	}
+
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
 	return config, nil
-}
-
-func ParseSubscription(subscriptionURL string) ([]*models.ProxyConfig, error) {
-	links, err := ParseSubscriptionURL(subscriptionURL)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing subscription URL: %v", err)
-	}
-
-	var configs []*models.ProxyConfig
-	for _, link := range links {
-		config, err := ParseProxyURL(link)
-		if err != nil {
-			log.Printf("Warning: error parsing proxy URL %s: %v", link, err)
-			continue
-		}
-		configs = append(configs, config)
-	}
-
-	return configs, nil
 }

@@ -8,8 +8,8 @@ import (
 	"xray-checker/checker"
 	"xray-checker/config"
 	"xray-checker/metrics"
-	"xray-checker/parser"
 	"xray-checker/runner"
+	"xray-checker/subscription"
 	"xray-checker/web"
 	"xray-checker/xray"
 
@@ -27,7 +27,7 @@ func main() {
 	log.Printf("Xray Checker %s starting...\n", version)
 
 	configFile := "xray_config.json"
-	proxyConfigs, err := parser.InitializeConfiguration(configFile)
+	proxyConfigs, err := subscription.InitializeConfiguration(configFile)
 	if err != nil {
 		log.Fatalf("Error initializing configuration: %v", err)
 	}
@@ -89,7 +89,7 @@ func main() {
 	s.Every(config.CLIConfig.Proxy.CheckInterval).Seconds().Do(func() {
 		if config.CLIConfig.Subscription.Update && needsUpdate.Swap(false) {
 			log.Printf("Updating subscription...")
-			newConfigs, err := parser.ParseSubscription(config.CLIConfig.Subscription.URL)
+			newConfigs, err := subscription.ReadFromSource(config.CLIConfig.Subscription.URL)
 			if err != nil {
 				log.Printf("Error checking subscription updates: %v", err)
 			} else if !xray.IsConfigsEqual(*proxyConfigs, newConfigs) {
@@ -114,10 +114,10 @@ func main() {
 	mux.Handle("/health", web.HealthHandler())
 
 	protectedHandler := http.NewServeMux()
-	protectedHandler.Handle("/", web.IndexHandler(version))
+	protectedHandler.Handle("/", web.IndexHandler(version, proxyChecker))
 	protectedHandler.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
-	web.RegisterConfigEndpoints(*proxyConfigs, config.CLIConfig.Xray.StartPort)
+	web.RegisterConfigEndpoints(*proxyConfigs, proxyChecker, config.CLIConfig.Xray.StartPort)
 	protectedHandler.Handle("/config/", web.ConfigStatusHandler(proxyChecker))
 
 	if config.CLIConfig.Metrics.Protected {

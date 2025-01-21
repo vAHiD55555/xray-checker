@@ -16,14 +16,18 @@ type EndpointInfo struct {
 	Name      string
 	URL       string
 	ProxyPort int
+	Status    bool
+	Latency   time.Duration
 }
 
-func IndexHandler(version string) http.HandlerFunc {
+func IndexHandler(version string, proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
+
+		RegisterConfigEndpoints(proxyChecker.GetProxies(), proxyChecker, config.CLIConfig.Xray.StartPort)
 
 		data := PageData{
 			Version:                    version,
@@ -113,7 +117,7 @@ func ConfigStatusHandler(proxyChecker *checker.ProxyChecker) http.HandlerFunc {
 	}
 }
 
-func RegisterConfigEndpoints(proxies []*models.ProxyConfig, startPort int) {
+func RegisterConfigEndpoints(proxies []*models.ProxyConfig, proxyChecker *checker.ProxyChecker, startPort int) {
 	registeredEndpoints = make([]EndpointInfo, 0, len(proxies))
 
 	for _, proxy := range proxies {
@@ -124,10 +128,14 @@ func RegisterConfigEndpoints(proxies []*models.ProxyConfig, startPort int) {
 			proxy.Port,
 		)
 
+		status, latency, _ := proxyChecker.GetProxyStatus(proxy.Name)
+
 		registeredEndpoints = append(registeredEndpoints, EndpointInfo{
 			Name:      fmt.Sprintf("%s (%s:%d)", proxy.Name, proxy.Server, proxy.Port),
 			URL:       endpoint,
 			ProxyPort: startPort + proxy.Index,
+			Status:    status,
+			Latency:   latency,
 		})
 	}
 }
