@@ -2,8 +2,10 @@ package web
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"io"
+	"time"
 )
 
 //go:embed templates/*.html
@@ -13,7 +15,16 @@ var indexTmpl *template.Template
 
 func init() {
 	var err error
-	indexTmpl, err = template.ParseFS(content, "templates/*.html")
+	funcMap := template.FuncMap{
+		"formatLatency": func(d time.Duration) string {
+			if d == 0 {
+				return "n/a"
+			}
+			return fmt.Sprintf("%dms", d.Milliseconds())
+		},
+	}
+
+	indexTmpl, err = template.New("index.html").Funcs(funcMap).ParseFS(content, "templates/*.html")
 	if err != nil {
 		panic(err)
 	}

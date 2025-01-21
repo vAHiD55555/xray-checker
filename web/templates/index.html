@@ -156,6 +156,16 @@
         font-size: 0.9em;
         margin-left: 8px;
       }
+
+      .status-icon {
+        margin-right: 2px;
+      }
+
+      .latency {
+        color: var(--footer-color);
+        font-size: 0.9em;
+        margin-right: 8px;
+      }
     </style>
   </head>
   <body>
@@ -184,8 +194,10 @@
       {{end}}
       <br />
       <strong>Update Subscription:</strong> {{.SubscriptionUpdate}}<br />
+      {{if .SubscriptionUpdate}}
       <strong>Subscription update Interval:</strong>
       {{.SubscriptionUpdateInterval}} seconds<br />
+      {{end}}
       <strong>Simulate Latency on Endpoint:</strong> {{.SimulateLatency}}<br />
       <strong>IP Check Timeout:</strong> {{.Timeout}} seconds<br />
     </div>
@@ -207,7 +219,15 @@
     <ul class="endpoints">
       {{ range .Endpoints }}
       <li>
-        <span class="endpoint-link"><a href="{{.URL}}">{{.Name}}</a></span>
+        <span class="endpoint-link">
+          {{ if .Status }}
+          <span class="status-icon">🟢</span>
+          <span class="latency">{{ formatLatency .Latency }}</span>
+          {{ else }}
+          <span class="status-icon">🔴</span>
+          {{ end }}
+          <a href="{{.URL}}">{{.Name}}</a>
+        </span>
         <span class="proxy-port">(Proxy Port: {{.ProxyPort}})</span>
         <button class="copy-button" onclick="copyToClipboard(this, '{{.URL}}')">
           Copy URL
@@ -238,21 +258,56 @@
       const savedTheme = localStorage.getItem("theme") || "light";
       document.documentElement.setAttribute("data-theme", savedTheme);
 
+      function fallbackCopyTextToClipboard(text, button) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+
+        // Prevent scrolling to bottom of page in MS Edge.
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          const successful = document.execCommand("copy");
+          const originalText = button.textContent;
+          button.textContent = "Copied!";
+          setTimeout(() => {
+            button.textContent = originalText;
+          }, 2000);
+        } catch (err) {
+          console.error("Fallback: Oops, unable to copy", err);
+          alert("Failed to copy URL");
+        }
+
+        document.body.removeChild(textArea);
+      }
+
       function copyToClipboard(button, url) {
         const fullUrl = new URL(url, window.location.origin).toString();
 
+        if (!navigator.clipboard) {
+          fallbackCopyTextToClipboard(fullUrl, button);
+          return;
+        }
+
         navigator.clipboard
           .writeText(fullUrl)
-          .then(function () {
+          .then(() => {
             const originalText = button.textContent;
             button.textContent = "Copied!";
             setTimeout(() => {
               button.textContent = originalText;
             }, 2000);
           })
-          .catch(function (err) {
+          .catch((err) => {
             console.error("Failed to copy text: ", err);
-            alert("Failed to copy URL");
+            // Если Clipboard API не сработал, используем fallback
+            fallbackCopyTextToClipboard(fullUrl, button);
           });
       }
     </script>

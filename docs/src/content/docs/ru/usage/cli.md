@@ -1,35 +1,35 @@
 ---
 title: CLI
-description: CLI usage of Xray Checker
+description: Использование CLI в Xray Checker
 ---
 
-### Basic Command Line Usage
+### Базовое использование командной строки
 
-The CLI interface provides complete control over Xray Checker's functionality through command-line arguments.
+CLI интерфейс предоставляет полный контроль над функциональностью Xray Checker через аргументы командной строки.
 
-### Installation
+### Установка
 
-Download the latest binary from releases:
+Скачайте последнюю версию бинарного файла из релизов:
 
 ```bash
-# For Linux amd64
+# Для Linux amd64
 curl -Lo xray-checker https://github.com/kutovoys/xray-checker/releases/latest/download/xray-checker_linux_amd64
 chmod +x xray-checker
 
-# For Linux arm64
+# Для Linux arm64
 curl -Lo xray-checker https://github.com/kutovoys/xray-checker/releases/latest/download/xray-checker_linux_arm64
 chmod +x xray-checker
 ```
 
-### Basic Usage
+### Базовое использование
 
-Minimum required configuration:
+Минимально необходимая конфигурация:
 
 ```bash
 ./xray-checker --subscription-url="https://your-subscription-url/sub"
 ```
 
-### Full Configuration Example
+### Пример полной конфигурации
 
 ```bash
 ./xray-checker \
@@ -53,21 +53,21 @@ Minimum required configuration:
   --run-once=false
 ```
 
-### Common CLI Operations
+### Основные операции CLI
 
-Check version:
+Проверка версии:
 
 ```bash
 ./xray-checker --version
 ```
 
-Run single check cycle:
+Запуск одного цикла проверки:
 
 ```bash
 ./xray-checker --subscription-url="https://your-sub-url" --run-once
 ```
 
-Enable metrics authentication:
+Включение аутентификации метрик:
 
 ```bash
 ./xray-checker \
@@ -77,7 +77,7 @@ Enable metrics authentication:
   --metrics-password=pass
 ```
 
-Change ports:
+Изменение портов:
 
 ```bash
 ./xray-checker \

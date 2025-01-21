@@ -113,7 +113,7 @@ func UpdateConfiguration(newConfigs []*models.ProxyConfig, currentConfigs *[]*mo
 
 	*currentConfigs = newConfigs
 
-	web.RegisterConfigEndpoints(newConfigs, config.CLIConfig.Xray.StartPort)
+	web.RegisterConfigEndpoints(newConfigs, proxyChecker, config.CLIConfig.Xray.StartPort)
 
 	log.Println("Configuration updated successfully")
 	return nil

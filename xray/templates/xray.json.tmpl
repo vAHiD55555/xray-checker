@@ -10,7 +10,7 @@
       "listen": "127.0.0.1",
       "port": {{ add $.StartPort $proxy.Index }},
       "protocol": "socks",
-      "tag": "{{$proxy.Name}}_{{$proxy.Protocol}}_TRANSPORT",
+      "tag": "{{$proxy.Name}}_{{$proxy.Protocol}}_{{$proxy.Index}}_Inbound",
       "sniffing": {
         "enabled": true,
         "destOverride": ["http", "tls", "quic"],
@@ -28,7 +28,7 @@
     {{- template "default_outbounds" . -}}
     {{- range $proxy := .Proxies }},
     {
-      "tag": "{{$proxy.Name}}",
+      "tag": "{{$proxy.Name}}_{{$proxy.Index}}",
       "protocol": "{{$proxy.Protocol}}",
       {{- template "outbound_core" $proxy }}
     }
@@ -45,8 +45,8 @@
       {{- range $proxy := .Proxies }},
       {
         "type": "field",
-        "inboundTag": ["{{$proxy.Name}}_{{$proxy.Protocol}}_TRANSPORT"],
-        "outboundTag": "{{$proxy.Name}}"
+        "inboundTag": ["{{$proxy.Name}}_{{$proxy.Protocol}}_{{$proxy.Index}}_Inbound"],
+        "outboundTag": "{{$proxy.Name}}_{{$proxy.Index}}"
       }
       {{- end }}
     ]
