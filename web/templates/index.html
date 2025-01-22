@@ -271,6 +271,10 @@
           <span class="info-label">Server Port:</span>
           <span class="info-value">{{.Port}}</span>
         </div>
+        <div class="info-item">
+          <span class="info-label">Proxy Start Port:</span>
+          <span class="info-value">{{.StartPort}}</span>
+        </div>
         {{if .Instance}}
         <div class="info-item">
           <span class="info-label">Instance:</span>
@@ -278,7 +282,7 @@
         </div>
         {{end}}
         <div class="info-item">
-          <span class="info-label">IP Check Timeout:</span>
+          <span class="info-label">Proxy Check Timeout:</span>
           <span class="info-value">{{.Timeout}}s</span>
         </div>
       </div>
