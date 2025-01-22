@@ -16,6 +16,10 @@
         --button-color: #495057;
         --button-border: #ced4da;
         --button-hover-bg: #e9ecef;
+        --version-color: #6c757d;
+        --card-shadow: rgba(0, 0, 0, 0.1);
+        --grid-bg: #ffffff;
+        --grid-border: #eaeaea;
       }
 
       [data-theme="dark"] {
@@ -31,6 +35,10 @@
         --button-color: #e0e0e0;
         --button-border: #505050;
         --button-hover-bg: #505050;
+        --version-color: #a0a0a0;
+        --card-shadow: rgba(0, 0, 0, 0.3);
+        --grid-bg: #2d2d2d;
+        --grid-border: #404040;
       }
 
       body {
@@ -45,6 +53,103 @@
         transition: background-color 0.3s ease;
       }
 
+      /* Новые стили для верхней части */
+      .header-container {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--info-box-border);
+        padding-bottom: 10px;
+      }
+
+      .header-title {
+        margin: 0;
+        color: var(--header-color);
+        font-size: 2.2em;
+      }
+
+      .version-tag {
+        margin-left: 15px;
+        color: var(--version-color);
+        font-size: 0.9em;
+        padding: 3px 8px;
+        border-radius: 12px;
+        background-color: var(--info-box-bg);
+        border: 1px solid var(--info-box-border);
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .info-card {
+        background: var(--grid-bg);
+        border: 1px solid var(--grid-border);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px var(--card-shadow);
+      }
+
+      .info-card h3 {
+        margin: 0 0 15px 0;
+        color: var(--header-color);
+        font-size: 1.1em;
+        border-bottom: 1px solid var(--info-box-border);
+        padding-bottom: 8px;
+      }
+
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+      }
+
+      .info-label {
+        color: var(--version-color);
+        margin-right: 10px;
+      }
+
+      .info-value {
+        text-align: right;
+        color: var(--text-color);
+      }
+
+      .info-value a {
+        color: var(--link-color);
+        text-decoration: none;
+      }
+
+      .info-value a:hover {
+        text-decoration: underline;
+      }
+
+      .documentation-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--link-color);
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 10px;
+        background: var(--grid-bg);
+        border: 1px solid var(--grid-border);
+        box-shadow: 0 2px 4px var(--card-shadow);
+        margin-bottom: 20px;
+        transition: all 0.2s ease;
+        font-size: 1.1em;
+      }
+
+      .documentation-link:hover {
+        background: var(--button-hover-bg);
+        box-shadow: 0 4px 6px var(--card-shadow);
+        text-decoration: none;
+      }
+
+      /* Существующие стили */
       .theme-toggle {
         position: fixed;
         top: 20px;
@@ -60,25 +165,6 @@
 
       .theme-toggle:hover {
         background: var(--button-hover-bg);
-      }
-
-      h1 {
-        border-bottom: 2px solid var(--info-box-border);
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-        color: var(--header-color);
-      }
-
-      h2 {
-        color: var(--header-color);
-        margin: 30px 0 20px;
-      }
-
-      .container {
-        background: var(--container-bg);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
       }
 
       .info-box {
@@ -173,39 +259,93 @@
       🌓 Switch Theme
     </button>
 
-    <h1>Xray Checker</h1>
-
-    <div class="info-box">
-      <strong>Version:</strong> {{.Version}}<br />
-      <strong>Server Port:</strong> {{.Port}}<br />
-      {{if .Instance}}
-      <strong>Instance:</strong> {{.Instance}}<br />
-      {{end}} {{if .PushUrl}}<strong>Push URL:</strong>
-      <a href="{{.PushUrl}}" target="_blank">{{.PushUrl}}</a><br />
-      {{end}}
-      <strong>Check Interval:</strong> {{.CheckInterval}} seconds<br />
-      <strong>Check Method:</strong> {{.CheckMethod}}<br />
-      {{if eq .CheckMethod "ip"}}<strong>IP Check Url:</strong>
-      <a href="{{.IPCheckUrl}}" target="_blank">{{.IPCheckUrl}}</a><br />
-      {{end}} {{if eq .CheckMethod "status"}}
-      <strong>Status Check Url:</strong>
-      <a href="{{.StatusCheckUrl}}" target="_blank">{{.StatusCheckUrl}}</a
-      ><br />
-      {{end}}
-      <br />
-      <strong>Update Subscription:</strong> {{.SubscriptionUpdate}}<br />
-      {{if .SubscriptionUpdate}}
-      <strong>Subscription update Interval:</strong>
-      {{.SubscriptionUpdateInterval}} seconds<br />
-      {{end}}
-      <strong>Simulate Latency on Endpoint:</strong> {{.SimulateLatency}}<br />
-      <strong>IP Check Timeout:</strong> {{.Timeout}} seconds<br />
+    <div class="header-container">
+      <h1 class="header-title">Xray Checker</h1>
+      <span class="version-tag">{{.Version}}</span>
     </div>
 
-    <div class="info-box">
-      <strong>Available Endpoints:</strong><br />
-      • <a href="/metrics">Metrics</a> - Prometheus metrics endpoint<br />
-      • <a href="/health">Health</a> - Health check endpoint
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>Server Settings</h3>
+        <div class="info-item">
+          <span class="info-label">Server Port:</span>
+          <span class="info-value">{{.Port}}</span>
+        </div>
+        {{if .Instance}}
+        <div class="info-item">
+          <span class="info-label">Instance:</span>
+          <span class="info-value">{{.Instance}}</span>
+        </div>
+        {{end}}
+        <div class="info-item">
+          <span class="info-label">IP Check Timeout:</span>
+          <span class="info-value">{{.Timeout}}s</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Check Configuration</h3>
+        <div class="info-item">
+          <span class="info-label">Check Interval:</span>
+          <span class="info-value">{{.CheckInterval}}s</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Check Method:</span>
+          <span class="info-value">{{.CheckMethod}}</span>
+        </div>
+        {{if eq .CheckMethod "ip"}}
+        <div class="info-item">
+          <span class="info-label">IP Check URL:</span>
+          <span class="info-value">
+            <a href="{{.IPCheckUrl}}" target="_blank">View</a>
+          </span>
+        </div>
+        {{end}} {{if eq .CheckMethod "status"}}
+        <div class="info-item">
+          <span class="info-label">Status Check URL:</span>
+          <span class="info-value">
+            <a href="{{.StatusCheckUrl}}" target="_blank">View</a>
+          </span>
+        </div>
+        {{end}}
+      </div>
+
+      <div class="info-card">
+        <h3>Subscription Settings</h3>
+        <div class="info-item">
+          <span class="info-label">Update Subscription:</span>
+          <span class="info-value">{{.SubscriptionUpdate}}</span>
+        </div>
+        {{if .SubscriptionUpdate}}
+        <div class="info-item">
+          <span class="info-label">Update Interval:</span>
+          <span class="info-value">{{.SubscriptionUpdateInterval}}s</span>
+        </div>
+        {{end}} {{if .PushUrl}}
+        <div class="info-item">
+          <span class="info-label">Push URL:</span>
+          <span class="info-value">
+            <a href="{{.PushUrl}}" target="_blank">View</a>
+          </span>
+        </div>
+        {{end}}
+        <div class="info-item">
+          <span class="info-label">Simulate Latency:</span>
+          <span class="info-value">{{.SimulateLatency}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <a href="/metrics" class="documentation-link"> 📊 Metrics </a>
+      <a href="/health" class="documentation-link"> ❤️ Health </a>
+      <a
+        href="https://xray-checker.kutovoy.dev"
+        target="_blank"
+        class="documentation-link"
+      >
+        📚 Documentation
+      </a>
     </div>
 
     {{ if .Endpoints }}
